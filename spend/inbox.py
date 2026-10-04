@@ -117,6 +117,33 @@ def _blocked(path: Path) -> Path | None:
     return None
 
 
+def _import(path: Path, dry_run: bool) -> tuple[list[Expense], list[tuple[str, str]], int]:
+    """(logged, unreadable, # already done): import new inbox lines, or only scan them when dry_run."""
+    state = config.inbox_state()
+    if dry_run:
+        done = _keys(state.read_text(encoding="utf-8")) if state.exists() else set()
+        logged, _, bad, old = scan(read_lines(path), done)
+        return logged, bad, old
+    state.parent.mkdir(parents=True, exist_ok=True)
+    with open(state, "a+", encoding="utf-8") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)  # two runs at once take turns instead of both importing
+        fh.seek(0)
+        seen = fh.read()
+        logged, handled, bad, old = scan(read_lines(path), _keys(seen))
+        if logged:  # journal first: a crash between the two writes re-imports, never loses
+            journal.append(config.journal(), logged, SOURCE)
+        if handled:
+            fh.write(("" if seen else STATE_HEADER) + "".join(k + "\n" for k in handled))
+    return logged, bad, old
+
+
+def _report_bad(bad: list[tuple[str, str]]) -> None:
+    print(f"spend inbox: couldn't read {len(bad)} line(s), log them by hand "
+          "(each inbox line is only tried once):", file=sys.stderr)
+    for line, err in bad:
+        print(f"  {line}\n    {err}", file=sys.stderr)
+
+
 def run(dry_run: bool = False) -> int:
     """`spend inbox`: import new lines exactly once, tagged src:phone."""
     path = config.inbox()
@@ -131,31 +158,35 @@ def run(dry_run: bool = False) -> int:
     if not path.exists():
         print(f"spend inbox: no inbox at {path} yet (set up the iPhone Shortcut: docs/phone-shortcut.md)")
         return 0
-
-    state = config.inbox_state()
-    if dry_run:
-        done = _keys(state.read_text(encoding="utf-8")) if state.exists() else set()
-        logged, handled, bad, old = scan(read_lines(path), done)
-    else:
-        state.parent.mkdir(parents=True, exist_ok=True)
-        with open(state, "a+", encoding="utf-8") as fh:
-            fcntl.flock(fh, fcntl.LOCK_EX)  # two runs at once take turns instead of both importing
-            fh.seek(0)
-            seen = fh.read()
-            logged, handled, bad, old = scan(read_lines(path), _keys(seen))
-            if logged:  # journal first: a crash between the two writes re-imports, never loses
-                journal.append(config.journal(), logged, SOURCE)
-            if handled:
-                fh.write(("" if seen else STATE_HEADER) + "".join(k + "\n" for k in handled))
-
+    logged, bad, old = _import(path, dry_run)
     verb = "would log" if dry_run else "logged"
     for e in logged:
         print(f"{verb} {journal.fmt_amount(e.amount)} {e.currency} · {e.category} · {e.note} ({e.date}, phone)")
     if bad:
-        print(f"spend inbox: couldn't read {len(bad)} line(s), log them by hand "
-              "(each inbox line is only tried once):", file=sys.stderr)
-        for line, err in bad:
-            print(f"  {line}\n    {err}", file=sys.stderr)
+        _report_bad(bad)
     if not logged and not bad:
         print(f"spend inbox: nothing new ({old} line(s) already imported)")
     return 1 if bad else 0
+
+
+def sync() -> None:
+    """Pull new phone lines before `spend month` / `spend list`, so nobody has to run `spend inbox`.
+    Prints only what it imported or what went wrong; a problem here never stops the report."""
+    path = config.inbox()
+    blocked = _blocked(path)
+    if blocked:
+        print(f"(phone entries not imported: no permission to read {blocked}. "
+              "Run this in your own terminal; from Claude, type `! spend inbox`)", file=sys.stderr)
+        return
+    if not _download(path):
+        print("(phone entries not imported: the inbox is still downloading from iCloud)", file=sys.stderr)
+        return
+    if not path.exists():
+        return
+    logged, bad, _ = _import(path, dry_run=False)
+    for e in logged:
+        print(f"+ from phone: {journal.fmt_amount(e.amount)} {e.currency} · {e.category} · {e.note} ({e.date})")
+    if bad:
+        _report_bad(bad)
+    if logged or bad:
+        print()
