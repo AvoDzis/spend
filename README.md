@@ -1,5 +1,7 @@
 # spend
 
+[![test](https://github.com/AvoDzis/spend/actions/workflows/test.yml/badge.svg)](https://github.com/AvoDzis/spend/actions/workflows/test.yml)
+
 **Track spending by typing one line, from your terminal, your iPhone or Claude.**
 
 ```sh
