@@ -119,15 +119,28 @@ def _known(rules: list[Rule]) -> set[str]:
     return {r.category for r in rules} | {e.category for e in journal.read_entries(config.journal())} | {OTHER}
 
 
+def _retag_other(category: str) -> int:
+    """Re-file earlier `other` entries that the rules now put under `category`."""
+    path, rules = config.journal(), load_rules()
+    hits = [e for e in journal.read_entries(path) if e.category == OTHER and categorize(e.note, rules) == category]
+    for e in reversed(hits):  # back to front keeps the offsets of earlier entries valid
+        journal.set_category(path, e, category)
+    return len(hits)
+
+
 def _learn(keyword: list[str], category: str, rules: list[Rule], known: set[str]) -> None:
-    """Save keyword → category unless the rules already give that category for it."""
+    """Save keyword → category unless the rules already give that category for it,
+    then re-file earlier `other` entries the rule now covers."""
     phrase = " ".join(keyword)
     if categorize(phrase, rules) == category:
         print(f'rules already file "{phrase}" under {category}')
-        return
-    _save(keyword, category)
-    new = "" if category in known else " (new category)"
-    print(f'learned "{phrase}" → {category}{new}')
+    else:
+        _save(keyword, category)
+        new = "" if category in known else " (new category)"
+        print(f'learned "{phrase}" → {category}{new}')
+    n = _retag_other(category)
+    if n:
+        print(f"re-filed {n} earlier 'other' entr{'y' if n == 1 else 'ies'} under {category}")
 
 
 def fix(target: str, category: str, word: str | None = None) -> int:
@@ -160,7 +173,7 @@ def fix(target: str, category: str, word: str | None = None) -> int:
 
 
 def learn(keyword: str, category: str) -> int:
-    """`spend learn <keyword> <category>`: add a rule without touching any entry."""
+    """`spend learn <keyword> <category>`: add a rule (and re-file matching `other` entries)."""
     ws = words(keyword, keep_star=True)
     if not ws:
         print(f"spend learn: {keyword!r} has no keyword to learn", file=sys.stderr)
