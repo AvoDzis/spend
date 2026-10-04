@@ -83,6 +83,8 @@ spend -n inbox     # show what it would import, write nothing
 - The expense date is the timestamp's date, so a line typed at 23:50 and imported tomorrow still
   counts for the right day. "yesterday" in the line counts back from the timestamp.
 - One line can hold several expenses: `800dram supermarket, 50usd jeans`.
+- Catching up on past days: `oct 1 1200 taxi, 4500 sas, oct 2 3000 coffee`. A date applies to the
+  items after it until the next date; items with no date get the day you typed them.
 - A line it can't read (no amount, like `coffee`) is printed once with the reason and then skipped
   for good: log it by hand, e.g. `spend 2026-10-04 300 coffee`.
 

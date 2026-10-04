@@ -72,7 +72,8 @@ spend fix last groceries --word sas       # learns just "sas", so "sas eggs" wor
 - **Amounts anywhere:** `800 taxi`, `taxi 800`, `1,500 coffee`, `1.5k coffee`, `250k rent`
 - **Currencies:** `800dram`, `800 amd`, `3000֏`, `50usd`, `$12.50`, `20eur`, `12€`, plus `rub` and `gbp`. No currency means AMD.
 - **Several at once:** `800dram supermarket, 50usd jeans; 1200 taxi`
-- **Other days:** `yesterday 1200 taxi`, `2026-09-30 5000 gym`
+- **Other days:** `yesterday 1200 taxi`, `oct 1 1200 taxi`, `1 oct …`, `2026-09-30 5000 gym`. A date
+  carries on to the items after it: `oct 1 1200 taxi, 4500 sas, oct 2 3000 coffee`
 - **Categories:** 17 built-in ones (groceries, eating-out, transport, home, utilities, health,
   clothes, subscriptions…) matched by keyword, with Yerevan shops and services included.
   Anything unknown goes to `other` until you teach it.
