@@ -1,0 +1,4 @@
+#!/bin/sh
+# Launcher: resolve the repo through the symlink so `spend` works from anywhere.
+REPO=$(dirname "$(dirname "$(readlink -f "$0")")")
+PYTHONPATH="$REPO${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m spend "$@"
