@@ -7,16 +7,17 @@
   spend list [N]                           last N entries
   spend fix last|N <category> [--word kw]  change a category and learn the note (or just kw)
   spend learn <keyword> <category>         add a keyword rule
+  spend rm last|N [N …]                    delete entries (asks first; -y skips the question)
   spend cats                               categories and their keywords
 
-Options: -n / --dry-run (show, don't write), --src <name> (tag where it came from; default cli).
+Options: -n / --dry-run (show, don't write), -y / --yes (don't ask), --src <name> (tag where it came from; default cli).
 """
 import sys
 
 from . import categories, config, inbox, journal, report
 from .parse import ParseError, parse_many
 
-COMMANDS = {"add", "inbox", "month", "list", "fix", "learn", "cats", "help"}
+COMMANDS = {"add", "inbox", "month", "list", "fix", "learn", "rm", "cats", "help"}
 
 
 def add(text: str, dry_run: bool = False, source: str = "cli") -> int:
@@ -35,13 +36,51 @@ def add(text: str, dry_run: bool = False, source: str = "cli") -> int:
     return 0
 
 
+def rm(targets: list[str], yes: bool = False, dry_run: bool = False) -> int:
+    """`spend rm last|N [N …]`: delete entries, numbered like `spend list` (1 = newest)."""
+    path = config.journal()
+    entries = journal.read_entries(path)
+    picked = []
+    for t in targets:
+        n = 1 if t == "last" else int(t) if t.isdigit() else 0
+        if n < 1:
+            print(f"spend rm: which entry? 'last' or a number from `spend list` (1 = newest), not {t!r}",
+                  file=sys.stderr)
+            return 2
+        if n > len(entries):
+            print(f"spend rm: there are only {len(entries)} entries in {path}", file=sys.stderr)
+            return 1
+        if entries[-n] not in picked:
+            picked.append(entries[-n])
+    lines = [f"{journal.fmt_amount(e.amount)} {e.currency} · {e.category} · {e.note} ({e.date})" for e in picked]
+    if dry_run:
+        print("".join(f"would remove {line}\n" for line in lines), end="")
+        return 0
+    if not yes:
+        if not sys.stdin.isatty():
+            print("".join(f"spend rm: would remove {line}\n" for line in lines) + "add -y to confirm",
+                  file=sys.stderr)
+            return 2
+        print("".join(f"  {line}\n" for line in lines), end="")
+        if input(f"remove {'these' if len(lines) > 1 else 'this'}? [y/N] ").strip().lower() not in ("y", "yes"):
+            print("kept")
+            return 1
+    journal.remove(path, picked)
+    print("".join(f"removed {line}\n" for line in lines), end="")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
-    dry_run, source = False, "cli"
+    dry_run, yes, source = False, False, "cli"
     for flag in ("-n", "--dry-run"):
         if flag in args:
             args.remove(flag)
             dry_run = True
+    for flag in ("-y", "--yes"):
+        if flag in args:
+            args.remove(flag)
+            yes = True
     if "--src" in args:
         i = args.index("--src")
         source = args[i + 1] if i + 1 < len(args) else source
@@ -74,6 +113,11 @@ def main(argv: list[str] | None = None) -> int:
             print("usage: spend learn <keyword> <category>", file=sys.stderr)
             return 2
         return categories.learn(" ".join(rest[:-1]), rest[-1])
+    if cmd == "rm":
+        if not rest:
+            print("usage: spend rm last|N [N …]  (numbers from `spend list`)", file=sys.stderr)
+            return 2
+        return rm(rest, yes, dry_run)
     if cmd == "cats":
         return categories.show()
     return 2

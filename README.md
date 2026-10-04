@@ -45,6 +45,8 @@ spend fix last personal-care              # learns this note
 spend fix last groceries --word sas       # learns just "sas", so "sas eggs" works next time
 ```
 
+**Logged something by mistake?** `spend rm last`, or `spend rm 3` with the number from `spend list`.
+
 ## What it understands
 
 - **Amounts anywhere:** `800 taxi`, `taxi 800`, `1,500 coffee`, `1.5k coffee`, `250k rent`
@@ -65,6 +67,7 @@ spend month [YYYY-MM]               totals by category, per currency, vs last mo
 spend list [N]                      last N entries (1 = newest)
 spend fix last|N <cat> [--word kw]  re-tag an entry and learn the rule
 spend learn <kw> <cat>              add a keyword rule
+spend rm last|N [N …]               delete entries (asks first; -y skips it)
 spend cats                          categories and their keywords
 spend inbox                         import lines logged on the iPhone
 spend -n …                          dry run: show, don't write
