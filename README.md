@@ -40,6 +40,24 @@ October 2026 · spent per category
   last month (Sep)   81,200  30.00
 ```
 
+**See it as charts**, right in the terminal:
+
+```
+$ spend chart                 # this month, bars per category
+October 2026 · AMD per category
+  groceries   ████████████████████████  49,500   87%
+  eating-out  ██▋                        5,500   10%
+  transport   █                          2,100    4%
+
+$ spend chart --days          # calendar, darker = bigger day
+    Mo  Tu  We  Th  Fr  Sa  Su
+                1░  2░  3█  4░
+    5·  6·  7░  8·  9· 10· 11·
+```
+
+Also `--trend 6` (last 6 months, with a sparkline per category), `--cat groceries` (one category
+over time), `--top 10` (biggest expenses), plus `--month 2026-09` and `--currency USD`.
+
 **When it guesses a category wrong, fix it once** and it remembers:
 
 ```sh
@@ -67,6 +85,7 @@ Each currency gets its own column, with no conversion: the totals are exactly wh
 spend <line>                        log one or more expenses
 spend month [YYYY-MM]               totals by category, per currency, vs last month
 spend list [N]                      last N entries (1 = newest)
+spend chart [options]               text charts: bars, --trend N, --days, --cat C, --top N
 spend fix last|N <cat> [--word kw]  re-tag an entry and learn the rule
 spend learn <kw> <cat>              add a keyword rule
 spend rm last|N [N …]               delete entries (asks first; -y skips it)

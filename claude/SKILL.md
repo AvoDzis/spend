@@ -13,6 +13,7 @@ description: Log and look up Avo's spending with the `spend` CLI (hledger journa
 | "I spent 1200 on a taxi yesterday" | rewrite into the line format `[date] <amount><currency> <what>` first: `spend --src claude yesterday 1200 taxi` |
 | `/spend month [YYYY-MM]`, "how much this month?" | `spend month [YYYY-MM]` (it imports new phone lines itself) |
 | `/spend list [N]` | `spend list [N]` |
+| `/spend chart …`, "show me a chart", "which days did I spend most" | `spend chart` (bars per category), `--trend N`, `--days`, `--cat <c>`, `--top N`, `--month YYYY-MM`, `--currency USD`; show the output in a code block |
 | `/spend fix last eating-out`, "that was eating out" | `spend fix last eating-out` (or `spend fix N <cat>` with N from `spend list`) |
 | `/spend rm last`, "delete that", "remove the taxi" | `spend -n rm last` (or `rm N` with N from `spend list`), show Avo what would go, and only after a yes: `spend rm -y …` with the same target |
 | `/spend inbox` | `spend inbox` |

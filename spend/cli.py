@@ -5,6 +5,7 @@
   spend inbox                              import lines from the iPhone inbox (month/list do it too)
   spend month [YYYY-MM]                    totals by category, per currency
   spend list [N]                           last N entries
+  spend chart [--trend|--days|--cat C|--top]  text charts (spend chart -h for options)
   spend fix last|N <category> [--word kw]  change a category and learn the note (or just kw)
   spend learn <keyword> <category>         add a keyword rule
   spend rm last|N [N …]                    delete entries (asks first; -y skips the question)
@@ -14,10 +15,10 @@ Options: -n / --dry-run (show, don't write), -y / --yes (don't ask), --src <name
 """
 import sys
 
-from . import categories, config, inbox, journal, report
+from . import categories, chart, config, inbox, journal, report
 from .parse import ParseError, parse_many
 
-COMMANDS = {"add", "inbox", "month", "list", "fix", "learn", "rm", "cats", "help"}
+COMMANDS = {"add", "inbox", "month", "list", "chart", "fix", "learn", "rm", "cats", "help"}
 
 
 def add(text: str, dry_run: bool = False, source: str = "cli") -> int:
@@ -95,12 +96,14 @@ def main(argv: list[str] | None = None) -> int:
         return add(" ".join(rest), dry_run, source)
     if cmd == "inbox":
         return inbox.run(dry_run)
-    if cmd in ("month", "list") and not dry_run:
+    if cmd in ("month", "list", "chart") and not dry_run:
         inbox.sync()  # phone entries show up without running `spend inbox` first
     if cmd == "month":
         return report.month(rest[0] if rest else None)
     if cmd == "list":
         return report.recent(int(rest[0]) if rest else 10)
+    if cmd == "chart":
+        return chart.run(rest)
     if cmd == "fix":
         word = None
         if "--word" in rest:
