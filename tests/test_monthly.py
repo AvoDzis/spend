@@ -9,7 +9,7 @@ from decimal import Decimal as D
 from pathlib import Path
 from unittest import mock
 
-from spend import cli, journal, monthly
+from spend import cli, digest, journal, monthly
 from spend.parse import Expense
 
 
@@ -40,16 +40,21 @@ class Report(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("hledger"), "hledger not installed")
     def test_build(self):
-        subject, body = monthly.build("2026-09", problem="phone entries not imported: test")
-        self.assertEqual(subject, "Spending · September 2026: 254,500 AMD + 40.00 USD")
-        self.assertTrue(body.startswith("⚠ phone entries not imported: test"))
-        for part in ("spent per category", "AMD per category", "USD per category", "biggest", "AMD per day",
-                     "Last 6 months", "3 entries (2 terminal, 1 phone)"):
-            self.assertIn(part, body)
+        d = monthly.build("2026-09", problem="phone entries not imported: test")
+        self.assertEqual(d.subject, "Spending · September 2026: 254,500 AMD + 40.00 USD")
+        text = digest.render_text(d)
+        self.assertIn("⚠ phone entries not imported: test", text)
+        for part in ("• Most went to home: 250,000 AMD, 98% of everything in AMD.", "AMD per category",
+                     "USD per category", "biggest payments", "AMD per day",
+                     "3 payments (2 from terminal, 1 from phone)"):
+            self.assertIn(part, text)
+        self.assertNotIn("Last 6 months", text)  # only one month of data
 
     def test_empty_month(self):
-        subject, body = monthly.build("2026-03")
-        self.assertEqual(subject, "Spending · March 2026: nothing logged")
+        d = monthly.build("2026-03")
+        self.assertEqual(d.subject, "Spending · March 2026: nothing logged")
+        self.assertIn("Nothing was logged in March.", digest.render_text(d))
+        self.assertIn("<html>", digest.render_html(d))
 
     @unittest.skipUnless(shutil.which("hledger"), "hledger not installed")
     def test_print_and_dry_run(self):
@@ -74,6 +79,8 @@ class Report(unittest.TestCase):
         server.login.assert_called_once_with("me@example.com", "app-pass")
         msg = server.send_message.call_args[0][0]
         self.assertEqual(msg["To"], "me@example.com")
+        self.assertEqual([p.get_content_type() for p in msg.iter_parts()], ["text/plain", "text/html"])
+        self.assertIn("Where it went", msg.get_body(("html",)).get_content())
         self.assertIn("September 2026", msg["Subject"])
         self.assertIn('sent "Spending', out)
 

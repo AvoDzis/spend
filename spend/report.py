@@ -4,7 +4,7 @@ import io
 import re
 import sys
 from datetime import date
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from . import config, journal
 from .parse import DEFAULT_CURRENCY
@@ -34,9 +34,10 @@ def month_name(ym: str, fmt: str = "%B %Y") -> str:
 
 
 def fmt_money(amount: Decimal, currency: str) -> str:
-    """12300 AMD → "12,300", 50 USD → "50.00". AMD keeps decimals only when it has them."""
-    whole = currency == "AMD" and amount == amount.to_integral_value()
-    return f"{amount:,.{0 if whole else 2}f}"
+    """12300 AMD → "12,300", 50 USD → "50.00". AMD is shown in whole dram (bank exports carry luma)."""
+    if currency == "AMD":
+        return f"{amount.quantize(Decimal(1), rounding=ROUND_HALF_UP):,}"
+    return f"{amount:,.2f}"
 
 
 def month_totals(path, months: list[str]) -> dict[str, Totals]:

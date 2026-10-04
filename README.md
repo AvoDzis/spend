@@ -132,8 +132,12 @@ with `SPEND_JOURNAL`, `SPEND_RULES` and `SPEND_INBOX`.
 
 ## Month-end email
 
-`spend report` puts the month table, charts, biggest expenses, calendar and 6-month trend together
-(last month by default). With `--email` it sends that to you through Gmail:
+`spend report` sums up a month (last month by default): the total as one big number, payments and
+average per day, a few plain-language highlights (where most went, the biggest payment and day,
+subscriptions, what's still uncategorized, the change from the month before), bars per category, a
+calendar shaded by daily spending, the biggest payments, and a 6-month trend once there's history.
+With `--email` it sends that to you through Gmail as a designed HTML email (plain text included);
+`--html report.html` writes the same page to a file to preview it.
 
 1. Create a Gmail app password (needs 2-Step Verification): https://myaccount.google.com/apppasswords
 2. Store it in the macOS Keychain; it's never written to a file:

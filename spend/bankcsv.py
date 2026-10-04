@@ -38,11 +38,14 @@ def clean(details: str) -> str:
     s = re.sub(r"^[\w.]{2,12}\s?\*\s?", "", s)            # payment processor: "POLAR* HIRIFY" → "HIRIFY"
     s = s.replace("\\", " ").replace("*", " ")
     s = re.split(r"\s+(?:e?pos\s+purchase|purchase\s+po\w*|visa\s+sales)\b", s, flags=re.I)[0]  # the bank's own words
-    s = re.sub(r"\s+վիրտ\s*$", "", s)                     # "virtual card" marker
+    s = re.sub(r"\s+վիրտ\S*\s*$", "", s)                  # "virtual card" marker (often cut short)
+    s = re.sub(r"^visa\s+", "", s, flags=re.I)
     s = re.sub(r"\s+(?:AM|[A-Z]{2}\s+\d+)\s*$", "", s)     # trailing country code + terminal id
     s = re.sub(r"\s\d{3,}\b", " ", s)                     # stray long numbers
     s = re.sub(r"\s+yerevan(?:\s+\w{1,2})?\s*$", "", s, flags=re.I)  # the city adds nothing
-    return re.sub(r"\s+", " ", s).strip(" .,-/").lower() or details.strip().lower()
+    ws = re.sub(r"\s+", " ", s).strip(" .,-/").lower().split()
+    ws = [w for i, w in enumerate(ws) if w not in ws[:i]]   # "backyard backyard" → "backyard"
+    return " ".join(ws) or details.strip().lower()
 
 
 def clean_transfer(details: str) -> str:
