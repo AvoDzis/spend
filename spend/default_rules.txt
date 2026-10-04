@@ -7,8 +7,8 @@
 # `spend fix` saves learned rules in your data dir (spend-rules.txt); they beat these.
 
 groceries: supermarket, grocery, groceries, market, sas, yerevan city, carrefour, nor zovq, parma, star supermarket, milk, bread, eggs, vegetables, fruit, meat, chicken, cheese, yandex lavka, продукты, սուպերմարկետ
-eating-out: restaurant, cafe, café, coffee, coffee shop, lunch, dinner, breakfast, brunch, pizza, burger, shawarma, khorovats, sushi, bar, pub, beer, takeaway, glovo, yandex eats, menu.am, kfc, mcdonalds, jazzve, кофе
-transport: taxi, gg, yandex go, yandex taxi, uber, bolt, bus, metro, subway, minibus, marshrutka, train, tram, fuel, petrol, benzin, parking, car wash, такси, տաքսի
+eating-out: restaurant, cafe, café, coffee, coffee shop, lunch, dinner, breakfast, brunch, pizza, burger, shawarma, khorovats, sushi, bar, pub, beer, takeaway, glovo, yandex eats, menu.am, kfc, mcdonalds, jazzve, кофе, wendys, burger king
+transport: taxi, gg, yandex go, yandex taxi, uber, bolt, bus, metro, subway, minibus, marshrutka, train, tram, fuel, petrol, benzin, parking, car wash, такси, տաքսի, ubr, oebb, wiener linien
 home: rent, furniture, ikea, cleaning, repair, plumber, household
 utilities: utilities, electricity, gas, water bill, heating, internet, ucom, viva, vivacell, team telecom, beeline, phone bill, mobile
 health: pharm*, doctor, dentist, dental, hospital, clinic, medicine, meds, pills, vitamins, аптека
@@ -16,10 +16,10 @@ personal-care: haircut, barber, salon, manicure, cosmetics, shampoo, soap, tooth
 clothes: clothes, clothing, jeans, shoes, sneakers, shirt, t-shirt, hoodie, jacket, coat, dress, pants, trousers, socks, zara
 shopping: amazon, globbing, onex, aliexpress, temu, wildberries, ozon, electronics, headphones, charger
 entertainment: cinema, movie, concert, theatre, theater, museum, game, bowling, party, club
-subscriptions: subscription, netflix, spotify, youtube premium, icloud, apple music, chatgpt, claude, patreon
+subscriptions: subscription, netflix, spotify, youtube premium, icloud, apple music, chatgpt, claude, patreon, apple.com
 sport: gym, fitness, yoga, pool, swimming, football, tennis, climbing
-travel: hotel, hostel, airbnb, booking, flight, plane, airport, visa
+travel: hotel, hostel, airbnb, booking, flight, plane, airport, visa, lounge, mobimatter, souvenir
 education: course, udemy, coursera, book, lesson, tuition, school
 gifts: gift, present, flowers, birthday, donation, charity
 pets: pet, vet, cat food, dog food
-fees: fee, commission, bank, atm, tax
+fees: fee, commission, bank, atm, tax, sms

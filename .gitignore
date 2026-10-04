@@ -2,3 +2,4 @@ __pycache__/
 *.journal
 .spend-inbox-state
 .claude/
+.spend-import-state
