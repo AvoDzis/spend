@@ -7,6 +7,7 @@
   spend month [YYYY-MM]                    totals by category, per currency
   spend list [N]                           last N entries
   spend chart [--trend|--days|--cat C|--top]  text charts (spend chart -h for options)
+  spend report [YYYY-MM] [--email]         month-end report (default: last month), printed or emailed
   spend fix last|N <category> [--word kw]  change a category and learn the note (or just kw)
   spend learn <keyword> <category>         add a keyword rule
   spend rm last|N [N …]                    delete entries (asks first; -y skips the question)
@@ -16,10 +17,10 @@ Options: -n / --dry-run (show, don't write), -y / --yes (don't ask), --src <name
 """
 import sys
 
-from . import bankcsv, categories, chart, config, inbox, journal, report
+from . import bankcsv, categories, chart, config, inbox, journal, monthly, report
 from .parse import ParseError, parse_many
 
-COMMANDS = {"add", "inbox", "month", "list", "chart", "import", "fix", "learn", "rm", "cats", "help"}
+COMMANDS = {"add", "inbox", "month", "list", "chart", "report", "import", "fix", "learn", "rm", "cats", "help"}
 
 
 def add(text: str, dry_run: bool = False, source: str = "cli") -> int:
@@ -105,6 +106,8 @@ def main(argv: list[str] | None = None) -> int:
         return report.recent(int(rest[0]) if rest else 10)
     if cmd == "chart":
         return chart.run(rest)
+    if cmd == "report":
+        return monthly.run(rest, dry_run)
     if cmd == "import":
         return bankcsv.run(rest, dry_run)
     if cmd == "fix":

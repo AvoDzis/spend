@@ -86,6 +86,7 @@ spend <line>                        log one or more expenses
 spend month [YYYY-MM]               totals by category, per currency, vs last month
 spend list [N]                      last N entries (1 = newest)
 spend chart [options]               text charts: bars, --trend N, --days, --cat C, --top N
+spend report [YYYY-MM] [--email]    month-end report (default: last month), printed or emailed
 spend fix last|N <cat> [--word kw]  re-tag an entry and learn the rule
 spend learn <kw> <cat>              add a keyword rule
 spend rm last|N [N …]               delete entries (asks first; -y skips it)
@@ -128,6 +129,19 @@ with `SPEND_JOURNAL`, `SPEND_RULES` and `SPEND_INBOX`.
 
 **macOS:** to read the iCloud inbox, your terminal app needs Full Disk Access
 (System Settings › Privacy & Security).
+
+## Month-end email
+
+`spend report` puts the month table, charts, biggest expenses, calendar and 6-month trend together
+(last month by default). With `--email` it sends that to you through Gmail:
+
+1. Create a Gmail app password (needs 2-Step Verification): https://myaccount.google.com/apppasswords
+2. Store it in the macOS Keychain; it's never written to a file:
+   `security add-generic-password -s spend-gmail -a you@gmail.com -w`
+3. Try it: `spend report --email --to you@gmail.com`
+4. Schedule it for the 1st of every month at 10:00: `make schedule EMAIL=you@gmail.com`
+   (a LaunchAgent; if the Mac is asleep it runs on wake; `make unschedule` removes it;
+   log in `~/Library/Logs/spend-report.log`)
 
 ## Starting with history
 

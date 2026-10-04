@@ -169,24 +169,29 @@ def run(dry_run: bool = False) -> int:
     return 1 if bad else 0
 
 
-def sync() -> None:
+def sync() -> str | None:
     """Pull new phone lines before `spend month` / `spend list`, so nobody has to run `spend inbox`.
-    Prints only what it imported or what went wrong; a problem here never stops the report."""
+    Prints only what it imported or what went wrong; a problem here never stops the report.
+    Returns the problem, if any, so a report can mention it."""
     path = config.inbox()
     blocked = _blocked(path)
+    problem = None
     if blocked:
-        print(f"(phone entries not imported: no permission to read {blocked}. "
-              "Run this in your own terminal; from Claude, type `! spend inbox`)", file=sys.stderr)
-        return
+        problem = f"phone entries not imported: no permission to read {blocked}"
+        print(f"({problem}. Run this in your own terminal; from Claude, type `! spend inbox`)", file=sys.stderr)
+        return problem
     if not _download(path):
-        print("(phone entries not imported: the inbox is still downloading from iCloud)", file=sys.stderr)
-        return
+        problem = "phone entries not imported: the inbox is still downloading from iCloud"
+        print(f"({problem})", file=sys.stderr)
+        return problem
     if not path.exists():
-        return
+        return None
     logged, bad, _ = _import(path, dry_run=False)
     for e in logged:
         print(f"+ from phone: {journal.fmt_amount(e.amount)} {e.currency} · {e.category} · {e.note} ({e.date})")
     if bad:
         _report_bad(bad)
+        problem = f"{len(bad)} phone line(s) couldn't be read; see `spend inbox`"
     if logged or bad:
         print()
+    return problem
