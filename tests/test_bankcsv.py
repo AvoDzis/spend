@@ -38,6 +38,10 @@ class Pieces(unittest.TestCase):
         self.assertEqual(bankcsv.clean("TINY CAFE PURCHASE POS YEREVAN AM 1"), "tiny cafe")
         self.assertEqual(bankcsv.clean("BUY .AM EPOS PURCHASE YEREVAN A"), "buy .am")
         self.assertEqual(bankcsv.clean("YERITSYAN SUPERMARKET YEREVAN A"), "yeritsyan supermarket")
+        self.assertEqual(bankcsv.clean("Ք: AVAG ARZUMANYAN IE YEREVAN AM 2"), "avag arzumanyan ie")
+        self.assertEqual(bankcsv.clean("Ք: ACHAJOUR PARPETSI 2 YEREVAN AM"), "achajour parpetsi 2")
+        self.assertEqual(bankcsv.clean("Ք: POLAR* HIRIFY POLAR.SH 840 վիրտ"), "hirify polar.sh")
+        self.assertEqual(bankcsv.clean("Ք: ANTHROPIC* CLAUDE SUB ANTHROPIC"), "claude sub anthropic")
 
     def test_clean_transfer(self):
         self.assertEqual(bankcsv.clean_transfer("Ucom Payment: 123456 / ab12cd"), "ucom payment")

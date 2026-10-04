@@ -18,7 +18,7 @@ shopping: amazon, globbing, onex, aliexpress, temu, wildberries, ozon, electroni
 entertainment: cinema, movie, concert, theatre, theater, museum, game, bowling, party, club
 subscriptions: subscription, netflix, spotify, youtube premium, icloud, apple music, chatgpt, claude, patreon, apple.com, google one
 sport: gym, fitness, yoga, pool, swimming, football, tennis, climbing
-travel: hotel, hostel, airbnb, booking, flight, plane, airport, visa, lounge, mobimatter, souvenir
+travel: hotel, hostel, airbnb, booking, flight, plane, airport, visa, lounge, mobimatter, souvenir, lagardere, relay, hubiz
 education: course, udemy, coursera, book, lesson, tuition, school
 gifts: gift, present, flowers, birthday, donation, charity
 pets: pet, vet, cat food, dog food
