@@ -2,7 +2,7 @@
 
   spend 800dram supermarket, 50usd jeans   log one or more expenses (no currency = AMD)
   spend yesterday 1200 taxi                 dates: today, yesterday, YYYY-MM-DD
-  spend inbox                              import lines from the iPhone inbox
+  spend inbox                              import lines from the iPhone inbox (month/list do it too)
   spend month [YYYY-MM]                    totals by category, per currency
   spend list [N]                           last N entries
   spend fix last|N <category> [--word kw]  change a category and learn the note (or just kw)
@@ -95,6 +95,8 @@ def main(argv: list[str] | None = None) -> int:
         return add(" ".join(rest), dry_run, source)
     if cmd == "inbox":
         return inbox.run(dry_run)
+    if cmd in ("month", "list") and not dry_run:
+        inbox.sync()  # phone entries show up without running `spend inbox` first
     if cmd == "month":
         return report.month(rest[0] if rest else None)
     if cmd == "list":

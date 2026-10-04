@@ -29,8 +29,8 @@ one plain-text file on your machine: no account, no cloud, no subscription.
 
 ```
 $ spend month
-October 2026
-                        AMD    USD
+October 2026 · spent per category
+  category            AMD    USD
   groceries          45,300      -
   eating-out         18,000      -
   transport          12,400      -
@@ -71,7 +71,7 @@ spend fix last|N <cat> [--word kw]  re-tag an entry and learn the rule
 spend learn <kw> <cat>              add a keyword rule
 spend rm last|N [N …]               delete entries (asks first; -y skips it)
 spend cats                          categories and their keywords
-spend inbox                         import lines logged on the iPhone
+spend inbox                         import iPhone lines (month and list do this for you)
 spend -n …                          dry run: show, don't write
 ```
 
@@ -86,7 +86,8 @@ Claude: /spend <line> ───────────────────�
 - **Storage is an [hledger](https://hledger.org) journal**, a plain-text accounting file. You can
   read it, grep it, back it up, or run any hledger report on it (`hledger -f spend.journal bal -M`).
 - **The iPhone needs no app:** a small Shortcut appends a timestamped line to a text file in
-  iCloud Drive. `spend inbox` imports each line exactly once, dated by when you typed it.
+  iCloud Drive. `spend month` and `spend list` import new lines automatically, each exactly once, dated by
+  when you typed it.
   Setup: [docs/phone-shortcut.md](docs/phone-shortcut.md).
 - **Claude** uses the [`/spend` skill](claude/SKILL.md), which turns plain speech into a line
   and calls the CLI.

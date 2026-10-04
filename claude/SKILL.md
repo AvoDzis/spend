@@ -11,7 +11,7 @@ description: Log and look up Avo's spending with the `spend` CLI (hledger journa
 |---|---|
 | `/spend 800dram supermarket, 50usd jeans` | `spend --src claude 800dram supermarket, 50usd jeans` |
 | "I spent 1200 on a taxi yesterday" | rewrite into the line format `[date] <amount><currency> <what>` first: `spend --src claude yesterday 1200 taxi` |
-| `/spend month [YYYY-MM]`, "how much this month?" | `spend inbox` (pull phone lines first), then `spend month [YYYY-MM]` |
+| `/spend month [YYYY-MM]`, "how much this month?" | `spend month [YYYY-MM]` (it imports new phone lines itself) |
 | `/spend list [N]` | `spend list [N]` |
 | `/spend fix last eating-out`, "that was eating out" | `spend fix last eating-out` (or `spend fix N <cat>` with N from `spend list`) |
 | `/spend rm last`, "delete that", "remove the taxi" | `spend -n rm last` (or `rm N` with N from `spend list`), show Avo what would go, and only after a yes: `spend rm -y …` with the same target |
@@ -26,6 +26,6 @@ description: Log and look up Avo's spending with the `spend` CLI (hledger journa
 - If a line was logged as `other`, ask Avo once which category, then `spend fix last <cat>`: that also saves the rule for next time. By default it learns the whole note; when the note contains an obvious store or brand ("sas milk bread" → `sas`), add `--word <kw>` so the rule generalizes. `spend learn <kw> <cat>` adds a rule without an entry.
 - A question the commands don't answer (e.g. "groceries in September", "biggest expenses") → query hledger read-only: `hledger -f "${SPEND_JOURNAL:-$HOME/Desktop/personal/budgeting/spend.journal}" bal expenses:groceries -p 2026-09` / `reg expenses -p thismonth`.
 - Exit 2 = couldn't parse the line: show the message and ask, don't guess.
-- `spend inbox` reads iCloud Drive, which Claude's Bash sandbox can block ("Operation not permitted"). If it does, ask Avo to type `! spend inbox`, then continue.
+- Phone lines live in iCloud Drive, which Claude's Bash sandbox can block. If `spend month`/`list` says "phone entries not imported", or `spend inbox` says "permission denied", ask Avo to type `! spend inbox`, then continue.
 - Never edit the journal by hand; use the CLI.
 - **Private:** amounts and notes stay in the answer here. Never copy them into Obsidian notes, memory, the RAG index, or any external service.

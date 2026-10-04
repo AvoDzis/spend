@@ -13,6 +13,7 @@ CURRENCY_ORDER = ["AMD", "USD", "EUR"]  # first columns; any other currency foll
 YM_RE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 SRC_RE = re.compile(r"\bsrc:([^,\s]+)")
 NONE = "-"
+HEADER = "category"
 
 Totals = dict[str, dict[str, Decimal]]  # category -> currency -> amount
 
@@ -84,13 +85,13 @@ def render_month(ym: str, this: Totals, last: Totals) -> str:
     cats = sorted(this, key=lambda cat: ([-this[cat].get(c, 0) for c in curs], cat))
     rows = [(cat, cells(this[cat])) for cat in cats]
     foot = [("total", cells(total)), (f"last month ({month_name(prev_month(ym), '%b')})", cells(last_total))]
-    label_w = max(len(r[0]) for r in rows + foot)
+    label_w = max(len(HEADER), *(len(r[0]) for r in rows + foot))
     col_w = [max(len(c), *(len(r[1][i]) for r in rows + foot)) for i, c in enumerate(curs)]
 
     def line(label: str, values: list[str]) -> str:
         return f"  {label:<{label_w}}" + "".join(f"  {v:>{w}}" for v, w in zip(values, col_w))
 
-    out = [title, line("", curs)]
+    out = [f"{title} · spent per category", line(HEADER, curs)]
     out += [line(label, vals) for label, vals in rows] or ["  nothing logged yet"]
     out.append("  " + "─" * (label_w + sum(w + 2 for w in col_w)))
     out += [line(label, vals) for label, vals in foot]

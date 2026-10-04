@@ -69,6 +69,8 @@ Pick any of these:
 
 ## 4. On the Mac
 
+`spend month` and `spend list` import new phone lines automatically. To import without a report:
+
 ```sh
 spend inbox        # import new phone lines, tagged src:phone
 spend -n inbox     # show what it would import, write nothing

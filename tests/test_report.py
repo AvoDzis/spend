@@ -32,8 +32,8 @@ class RenderMonth(unittest.TestCase):
                 "clothes": {"USD": D("50")}, "fun": {"EUR": D("20"), "AMD": D("1000")}}
         last = {"home": {"AMD": D("250000"), "USD": D("30")}}
         lines = report.render_month("2026-10", this, last).splitlines()
-        self.assertEqual(lines[0], "October 2026")
-        self.assertEqual(lines[1].split(), ["AMD", "USD", "EUR"])
+        self.assertEqual(lines[0], "October 2026 · spent per category")
+        self.assertEqual(lines[1].split(), ["category", "AMD", "USD", "EUR"])
         # categories sorted by AMD, then USD, then EUR, biggest first
         self.assertEqual([ln.split()[0] for ln in lines[2:6]], ["groceries", "transport", "fun", "clothes"])
         self.assertEqual(lines[2].split(), ["groceries", "12,300", "-", "-"])
@@ -46,7 +46,7 @@ class RenderMonth(unittest.TestCase):
 
     def test_only_currencies_in_use(self):
         out = report.render_month("2026-10", {"groceries": {"AMD": D("800")}}, {})
-        self.assertEqual(out.splitlines()[1].split(), ["AMD"])
+        self.assertEqual(out.splitlines()[1].split(), ["category", "AMD"])
         self.assertIn("last month (Sep)", out)
 
     def test_empty_this_month(self):
@@ -117,8 +117,8 @@ class Commands(unittest.TestCase):
         code, out = self.run_cli("month", "2026-10")
         self.assertEqual(code, 0, out)
         lines = out.splitlines()
-        self.assertEqual(lines[0], "October 2026")
-        self.assertEqual(lines[1].split(), ["AMD", "USD"])
+        self.assertEqual(lines[0], "October 2026 · spent per category")
+        self.assertEqual(lines[1].split(), ["category", "AMD", "USD"])
         self.assertEqual(lines[2].split(), ["food", "7,000", "-"])
         self.assertEqual(lines[3].split(), ["groceries", "5,300", "-"])
         self.assertEqual(lines[4].split(), ["clothes", "-", "50.00"])
@@ -130,7 +130,7 @@ class Commands(unittest.TestCase):
         self.run_cli("1200", "taxi")
         code, out = self.run_cli("month")
         self.assertEqual(code, 0, out)
-        self.assertEqual(out.splitlines()[0], date.today().strftime("%B %Y"))
+        self.assertTrue(out.splitlines()[0].startswith(date.today().strftime("%B %Y")))
         self.assertIn("1,200", out)
 
     def test_list(self):

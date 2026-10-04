@@ -125,6 +125,45 @@ class Inbox(unittest.TestCase):
         self.assertIn("no inbox at", out)
         self.assertFalse((self.dir / ".spend-inbox-state").exists())
 
+    def run_cmd(self, *args):
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(list(args))
+        return code, out.getvalue(), err.getvalue()
+
+    def test_list_and_month_import_phone_lines_first(self):
+        self.phone("2026-10-04 09:10:00 1200 taxi")
+        code, out, _ = self.run_cmd("list")
+        self.assertEqual(code, 0)
+        self.assertIn("+ from phone: 1200 AMD · transport · taxi (2026-10-04)", out)
+        self.assertIn("1  2026-10-04  1,200 AMD  transport  taxi (phone)", out)
+        self.phone("2026-10-04 10:00:00 800 bus")
+        if shutil.which("hledger"):
+            code, out, _ = self.run_cmd("month", "2026-10")
+            self.assertEqual(code, 0)
+            self.assertIn("+ from phone: 800 AMD", out)
+        code, out, _ = self.run_cmd("list")  # nothing new: no import lines
+        self.assertNotIn("from phone", out)
+        self.assertEqual(len(self.entries()), 2 if shutil.which("hledger") else 1)
+
+    def test_list_without_inbox_is_quiet(self):
+        code, out, err = self.run_cmd("list")
+        self.assertEqual((code, err), (0, ""))
+        self.assertNotIn("phone", out)
+
+    @unittest.skipIf(os.geteuid() == 0, "root can read anything")
+    def test_unreadable_inbox_does_not_stop_list(self):
+        self.run_cmd("500 coffee")
+        self.phone("2026-10-04 10:00:00 800 taxi")
+        self.inbox.parent.chmod(0)
+        try:
+            code, out, err = self.run_cmd("list")
+        finally:
+            self.inbox.parent.chmod(0o755)
+        self.assertEqual(code, 0)
+        self.assertIn("phone entries not imported", err)
+        self.assertIn("coffee", out)
+
     @unittest.skipIf(os.geteuid() == 0, "root can read anything")
     def test_unreadable_folder_is_not_no_inbox(self):
         self.phone("2026-10-04 10:00:00 800 taxi")
