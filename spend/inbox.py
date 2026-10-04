@@ -11,6 +11,7 @@ anything twice. The inbox itself is only read, never written (the phone may be a
 """
 import fcntl
 import hashlib
+import os
 import re
 import subprocess
 import sys
@@ -94,9 +95,27 @@ def _download(path: Path) -> bool:
     return False
 
 
+def _blocked(path: Path) -> Path | None:
+    """The nearest existing folder above the inbox that can't be read (macOS privacy, Claude's sandbox).
+    Without this check a blocked iCloud folder looks the same as "no inbox yet"."""
+    for d in path.parents:
+        if d.is_dir():
+            try:
+                os.listdir(d)
+            except PermissionError:
+                return d
+            return None
+    return None
+
+
 def run(dry_run: bool = False) -> int:
     """`spend inbox`: import new lines exactly once, tagged src:phone."""
     path = config.inbox()
+    blocked = _blocked(path)
+    if blocked:
+        print(f"spend inbox: can't read {blocked} (permission denied). Run `spend inbox` in your own "
+              "terminal; from Claude, type `! spend inbox`", file=sys.stderr)
+        return 1
     if not _download(path):
         print(f"spend inbox: {path} is still downloading from iCloud, try again in a moment", file=sys.stderr)
         return 1

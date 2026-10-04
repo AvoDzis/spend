@@ -117,6 +117,18 @@ class Inbox(unittest.TestCase):
         self.assertIn("no inbox at", out)
         self.assertFalse((self.dir / ".spend-inbox-state").exists())
 
+    @unittest.skipIf(os.geteuid() == 0, "root can read anything")
+    def test_unreadable_folder_is_not_no_inbox(self):
+        self.phone("2026-10-04 10:00:00 800 taxi")
+        self.inbox.parent.chmod(0)
+        try:
+            code, out, err = self.run_inbox()
+        finally:
+            self.inbox.parent.chmod(0o755)
+        self.assertEqual(code, 1)
+        self.assertIn("permission denied", err)
+        self.assertEqual(self.entries(), [])
+
     def test_icloud_placeholder_is_downloaded(self):
         (self.inbox.parent / ".inbox.txt.icloud").write_text("")
 
