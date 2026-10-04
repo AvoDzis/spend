@@ -86,6 +86,15 @@ def set_category(path: Path, entry: Entry, category: str) -> None:
     path.write_text(text[:entry.start] + new + text[entry.end:], encoding="utf-8")
 
 
+def remove(path: Path, entries: list[Entry]) -> None:
+    """Delete entries (and the blank line after each) in one write."""
+    text = path.read_text(encoding="utf-8")
+    for e in sorted(entries, key=lambda e: e.start, reverse=True):  # back to front keeps offsets valid
+        end = e.end + 1 if text[e.end:e.end + 1] == "\n" else e.end
+        text = text[:e.start] + text[end:]
+    path.write_text(text, encoding="utf-8")
+
+
 def hledger(path: Path, *args: str) -> str:
     """Run hledger on the journal and return its stdout."""
     r = subprocess.run(["hledger", "-f", str(path), *args], capture_output=True, text=True)
