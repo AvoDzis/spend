@@ -17,6 +17,7 @@ description: Log and look up Avo's spending with the `spend` CLI (hledger journa
 | `/spend fix last eating-out`, "that was eating out" | `spend fix last eating-out` (or `spend fix N <cat>` with N from `spend list`) |
 | `/spend rm last`, "delete that", "remove the taxi" | `spend -n rm last` (or `rm N` with N from `spend list`), show Avo what would go, and only after a yes: `spend rm -y …` with the same target |
 | `/spend inbox` | `spend inbox` |
+| "import my bank CSV for September" | `spend -n import <file> --month 2026-09` first, show the summary, then without `-n`. Only for months not logged by hand (else duplicates). |
 | `/spend cats` | `spend cats` |
 
 ## Line format

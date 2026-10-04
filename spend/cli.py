@@ -3,6 +3,7 @@
   spend 800dram supermarket, 50usd jeans   log one or more expenses (no currency = AMD)
   spend yesterday 1200 taxi                 dates: today, yesterday, YYYY-MM-DD
   spend inbox                              import lines from the iPhone inbox (month/list do it too)
+  spend import <bank.csv> [--month YYYY-MM]  one-time backfill from a bank export (card payments)
   spend month [YYYY-MM]                    totals by category, per currency
   spend list [N]                           last N entries
   spend chart [--trend|--days|--cat C|--top]  text charts (spend chart -h for options)
@@ -15,10 +16,10 @@ Options: -n / --dry-run (show, don't write), -y / --yes (don't ask), --src <name
 """
 import sys
 
-from . import categories, chart, config, inbox, journal, report
+from . import bankcsv, categories, chart, config, inbox, journal, report
 from .parse import ParseError, parse_many
 
-COMMANDS = {"add", "inbox", "month", "list", "chart", "fix", "learn", "rm", "cats", "help"}
+COMMANDS = {"add", "inbox", "month", "list", "chart", "import", "fix", "learn", "rm", "cats", "help"}
 
 
 def add(text: str, dry_run: bool = False, source: str = "cli") -> int:
@@ -104,6 +105,8 @@ def main(argv: list[str] | None = None) -> int:
         return report.recent(int(rest[0]) if rest else 10)
     if cmd == "chart":
         return chart.run(rest)
+    if cmd == "import":
+        return bankcsv.run(rest, dry_run)
     if cmd == "fix":
         word = None
         if "--word" in rest:

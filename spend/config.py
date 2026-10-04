@@ -31,3 +31,8 @@ def inbox() -> Path:
 def inbox_state() -> Path:
     """What `spend inbox` already imported (T-009.3)."""
     return _env("SPEND_INBOX_STATE", data_dir() / ".spend-inbox-state")
+
+
+def import_state() -> Path:
+    """Which bank-CSV rows `spend import` already imported."""
+    return _env("SPEND_IMPORT_STATE", data_dir() / ".spend-import-state")

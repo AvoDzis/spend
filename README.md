@@ -91,6 +91,7 @@ spend learn <kw> <cat>              add a keyword rule
 spend rm last|N [N …]               delete entries (asks first; -y skips it)
 spend cats                          categories and their keywords
 spend inbox                         import iPhone lines (month and list do this for you)
+spend import <bank.csv> [--month M] one-time backfill from a bank CSV export (card payments)
 spend -n …                          dry run: show, don't write
 ```
 
@@ -128,7 +129,22 @@ with `SPEND_JOURNAL`, `SPEND_RULES` and `SPEND_INBOX`.
 **macOS:** to read the iCloud inbox, your terminal app needs Full Disk Access
 (System Settings › Privacy & Security).
 
+## Starting with history
+
+Starting mid-year? Backfill a month you didn't log by hand from your bank's CSV export:
+
+```sh
+spend -n import export.csv --month 2026-09   # preview
+spend import export.csv --month 2026-09
+```
+
+Card payments become expenses in the currency you paid, tagged `src:bank` (shop names are cleaned up
+and categorized like any other line). Refunds and transfers are skipped and listed. Each row is
+imported once, so re-running or overlapping exports is safe. Use it only for months you didn't log by
+hand, or you'd count the same purchase twice. (The importer reads one Armenian bank's export format;
+other banks need a small adapter.)
+
 ## Not included (on purpose)
 
-Budgets, bank-statement import, currency conversion, any server or account. These may come later;
+Budgets, ongoing bank sync, currency conversion, any server or account. These may come later;
 logging comes first.
