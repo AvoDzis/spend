@@ -22,7 +22,7 @@ class Helpers(unittest.TestCase):
     def test_fmt_money(self):
         self.assertEqual(report.fmt_money(D("250000"), "AMD"), "250,000")
         self.assertEqual(report.fmt_money(D("1500.0"), "AMD"), "1,500")
-        self.assertEqual(report.fmt_money(D("12.5"), "AMD"), "12.50")
+        self.assertEqual(report.fmt_money(D("229941.75"), "AMD"), "229,942")
         self.assertEqual(report.fmt_money(D("50"), "USD"), "50.00")
 
 
