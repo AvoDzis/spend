@@ -40,10 +40,11 @@ def fmt_money(amount: Decimal, currency: str) -> str:
     return f"{amount:,.2f}"
 
 
-def month_totals(path, months: list[str]) -> dict[str, Totals]:
+def month_totals(path, months: list[str], sub: bool = False) -> dict[str, Totals]:
     """{"2026-10": {"groceries": {"AMD": Decimal("800")}}, ...} for each month, from hledger.
-    Sub-accounts roll up to their category (expenses:food:restaurants → food)."""
-    out = journal.hledger(path, "bal", "expenses", "--depth", "2", "-M",
+    Subcategories roll up to their category (expenses:transport:taxi → transport), or with
+    sub=True stay as "transport:taxi"."""
+    out = journal.hledger(path, "bal", "expenses", "--depth", "3" if sub else "2", "-M",
                           "-b", f"{min(months)}-01", "-e", f"{next_month(max(months))}-01",
                           "-O", "csv", "--layout", "tidy")
     result: dict[str, Totals] = {m: {} for m in months}
@@ -72,8 +73,27 @@ def currencies(*sums: dict[str, Decimal]) -> list[str]:
     return [c for c in CURRENCY_ORDER if c in seen] + sorted(seen - set(CURRENCY_ORDER))
 
 
-def render_month(ym: str, this: Totals, last: Totals) -> str:
-    """Table: one row per category, one column per currency, then this month's and last month's totals."""
+def _with_subcategories(this: Totals, curs: list[str]) -> list[tuple[str, Totals]]:
+    """[(label, by_cur)]: each category's total, then its subcategories indented below it."""
+    groups: dict[str, dict[str, dict[str, Decimal]]] = {}
+    for cat, by_cur in this.items():
+        groups.setdefault(journal.parent(cat), {})[cat] = by_cur
+    def order(d: dict) -> tuple:
+        return [-d.get(c, 0) for c in curs]
+    totals = {p: column_total(kids) for p, kids in groups.items()}
+    rows = []
+    for p in sorted(groups, key=lambda p: (order(totals[p]), p)):
+        rows.append((p, totals[p]))
+        kids = groups[p]
+        if any(":" in k for k in kids):
+            for k in sorted(kids, key=lambda k: (order(kids[k]), k)):
+                rows.append(("  " + (k.split(":", 1)[1] if ":" in k else "(general)"), kids[k]))
+    return rows
+
+
+def render_month(ym: str, this: Totals, last: Totals, sub: bool = False) -> str:
+    """Table: one row per category (and its subcategories, with sub=True), one column per currency,
+    then this month's and last month's totals."""
     total, last_total = column_total(this), column_total(last)
     curs = currencies(total, last_total)
     title = month_name(ym)
@@ -83,8 +103,11 @@ def render_month(ym: str, this: Totals, last: Totals) -> str:
     def cells(by_cur: dict[str, Decimal]) -> list[str]:
         return [fmt_money(by_cur[c], c) if by_cur.get(c) else NONE for c in curs]
 
-    cats = sorted(this, key=lambda cat: ([-this[cat].get(c, 0) for c in curs], cat))
-    rows = [(cat, cells(this[cat])) for cat in cats]
+    if sub:
+        rows = [(label, cells(by_cur)) for label, by_cur in _with_subcategories(this, curs)]
+    else:
+        cats = sorted(this, key=lambda cat: ([-this[cat].get(c, 0) for c in curs], cat))
+        rows = [(cat, cells(this[cat])) for cat in cats]
     foot = [("total", cells(total)), (f"last month ({month_name(prev_month(ym), '%b')})", cells(last_total))]
     label_w = max(len(HEADER), *(len(r[0]) for r in rows + foot))
     col_w = [max(len(c), *(len(r[1][i]) for r in rows + foot)) for i, c in enumerate(curs)]
@@ -99,8 +122,9 @@ def render_month(ym: str, this: Totals, last: Totals) -> str:
     return "\n".join(out) + "\n"
 
 
-def month(ym: str | None = None) -> int:
-    """`spend month [YYYY-MM]`: totals by category, one column per currency, plus last month's totals."""
+def month(ym: str | None = None, sub: bool = False) -> int:
+    """`spend month [YYYY-MM] [--sub]`: totals by category (and subcategory), one column per currency,
+    plus last month's totals."""
     ym = ym or date.today().strftime("%Y-%m")
     if not YM_RE.match(ym):
         print(f"spend month: {ym!r} isn't a month, use YYYY-MM (e.g. 2026-10)", file=sys.stderr)
@@ -110,14 +134,14 @@ def month(ym: str | None = None) -> int:
         print(f"no entries yet ({path})")
         return 0
     try:
-        t = month_totals(path, [prev_month(ym), ym])
+        t = month_totals(path, [prev_month(ym), ym], sub)
     except FileNotFoundError:
         print("spend month: hledger not found (brew install hledger)", file=sys.stderr)
         return 1
     except RuntimeError as e:
         print(f"spend month: hledger failed: {e}", file=sys.stderr)
         return 1
-    print(render_month(ym, t[ym], t[prev_month(ym)]), end="")
+    print(render_month(ym, t[ym], t[prev_month(ym)], sub), end="")
     return 0
 
 
@@ -127,7 +151,8 @@ def render_recent(entries: list[journal.Entry]) -> str:
     for i, e in enumerate(entries):
         src = SRC_RE.search(e.tags)
         note = e.note + (f" ({src[1]})" if src and src[1] != "cli" else "")
-        rows.append((str(len(entries) - i), e.date, fmt_money(e.amount, e.currency), e.currency, e.category, note))
+        rows.append((str(len(entries) - i), e.date, fmt_money(e.amount, e.currency), e.currency,
+                     journal.display(e.category), note))
     w = [max(len(r[k]) for r in rows) for k in range(5)]
     return "".join(f"{n:>{w[0]}}  {d}  {a:>{w[2]}} {c:<{w[3]}}  {cat:<{w[4]}}  {note}\n"
                    for n, d, a, c, cat, note in rows)

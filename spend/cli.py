@@ -4,14 +4,15 @@
   spend yesterday 1200 taxi                 dates: today, yesterday, YYYY-MM-DD
   spend inbox                              import lines from the iPhone inbox (month/list do it too)
   spend import <bank.csv> [--month YYYY-MM]  one-time backfill from a bank export (card payments)
-  spend month [YYYY-MM]                    totals by category, per currency
+  spend month [YYYY-MM] [--sub]            totals by category (--sub: with subcategories), per currency
   spend list [N]                           last N entries
   spend chart [--trend|--days|--cat C|--top]  text charts (spend chart -h for options)
   spend report [YYYY-MM] [--email]         month-end report (default: last month), printed or emailed
   spend fix last|N <category> [--word kw]  change a category and learn the note (or just kw); --once: no rule
   spend learn <keyword> <category>         add a keyword rule
   spend rm last|N [N …]                    delete entries (asks first; -y skips the question)
-  spend cats                               categories and their keywords
+  spend cats                               categories, subcategories and their keywords
+  spend recat                              re-apply the rules to past entries (only refines; -n to preview)
 
 Options: -n / --dry-run (show, don't write), -y / --yes (don't ask), --src <name> (tag where it came from; default cli).
 """
@@ -20,7 +21,7 @@ import sys
 from . import bankcsv, categories, chart, config, inbox, journal, monthly, report
 from .parse import ParseError, parse_many
 
-COMMANDS = {"add", "inbox", "month", "list", "chart", "report", "import", "fix", "learn", "rm", "cats", "help"}
+COMMANDS = {"add", "inbox", "month", "list", "chart", "report", "import", "fix", "learn", "rm", "cats", "recat", "help"}
 
 
 def add(text: str, dry_run: bool = False, source: str = "cli") -> int:
@@ -35,7 +36,7 @@ def add(text: str, dry_run: bool = False, source: str = "cli") -> int:
         journal.append(config.journal(), expenses, source)
     verb = "would log" if dry_run else "logged"
     for e in expenses:
-        print(f"{verb} {journal.fmt_amount(e.amount)} {e.currency} · {e.category} · {e.note} ({e.date})")
+        print(f"{verb} {journal.fmt_amount(e.amount)} {e.currency} · {journal.display(e.category)} · {e.note} ({e.date})")
     return 0
 
 
@@ -55,7 +56,7 @@ def rm(targets: list[str], yes: bool = False, dry_run: bool = False) -> int:
             return 1
         if entries[-n] not in picked:
             picked.append(entries[-n])
-    lines = [f"{journal.fmt_amount(e.amount)} {e.currency} · {e.category} · {e.note} ({e.date})" for e in picked]
+    lines = [f"{journal.fmt_amount(e.amount)} {e.currency} · {journal.display(e.category)} · {e.note} ({e.date})" for e in picked]
     if dry_run:
         print("".join(f"would remove {line}\n" for line in lines), end="")
         return 0
@@ -101,7 +102,9 @@ def main(argv: list[str] | None = None) -> int:
     if cmd in ("month", "list", "chart") and not dry_run:
         inbox.sync()  # phone entries show up without running `spend inbox` first
     if cmd == "month":
-        return report.month(rest[0] if rest else None)
+        sub = "--sub" in rest
+        rest = [a for a in rest if a != "--sub"]
+        return report.month(rest[0] if rest else None, sub)
     if cmd == "list":
         return report.recent(int(rest[0]) if rest else 10)
     if cmd == "chart":
@@ -132,4 +135,6 @@ def main(argv: list[str] | None = None) -> int:
         return rm(rest, yes, dry_run)
     if cmd == "cats":
         return categories.show()
+    if cmd == "recat":
+        return categories.recat(dry_run)
     return 2

@@ -74,9 +74,12 @@ spend fix last groceries --word sas       # learns just "sas", so "sas eggs" wor
 - **Several at once:** `800dram supermarket, 50usd jeans; 1200 taxi`
 - **Other days:** `yesterday 1200 taxi`, `oct 1 1200 taxi`, `1 oct …`, `2026-09-30 5000 gym`. A date
   carries on to the items after it: `oct 1 1200 taxi, 4500 sas, oct 2 3000 coffee`
-- **Categories:** 17 built-in ones (groceries, eating-out, transport, home, utilities, health,
-  clothes, subscriptions…) matched by keyword, with Yerevan shops and services included.
-  Anything unknown goes to `other` until you teach it.
+- **Categories with subcategories:** keywords file each expense under a category and, where it
+  helps, a subcategory: `transport/taxi`, `transport/scooter`, `transport/public`,
+  `eating-out/restaurant`, `eating-out/coffee`, `subscriptions/ai`, `growth/projects` (domains,
+  hosting), `growth/learning`, `growth/career`… Reports show categories, and you drill down when you
+  want: `spend month --sub`, `spend chart --cat transport`. Yerevan shops and services are included;
+  anything unknown goes to `other` until you teach it. `spend cats` shows the whole tree.
 
 Each currency gets its own column, with no conversion: the totals are exactly what you paid.
 
@@ -84,14 +87,15 @@ Each currency gets its own column, with no conversion: the totals are exactly wh
 
 ```
 spend <line>                        log one or more expenses
-spend month [YYYY-MM]               totals by category, per currency, vs last month
+spend month [YYYY-MM] [--sub]       totals by category (--sub: with subcategories), vs last month
 spend list [N]                      last N entries (1 = newest)
 spend chart [options]               text charts: bars, --trend N, --days, --cat C, --top N
 spend report [YYYY-MM] [--email]    month-end report (default: last month), printed or emailed
 spend fix last|N <cat> [--word kw]  re-tag an entry and learn the rule (--once: just this entry)
 spend learn <kw> <cat>              add a keyword rule (also re-files matching 'other' entries)
 spend rm last|N [N …]               delete entries (asks first; -y skips it)
-spend cats                          categories and their keywords
+spend cats                          categories, subcategories and their keywords
+spend recat                         re-apply the rules to past entries (only refines; never undoes a fix)
 spend inbox                         import iPhone lines (month and list do this for you)
 spend import <bank.csv> [--month M] one-time backfill from a bank CSV export (card payments)
 spend -n …                          dry run: show, don't write

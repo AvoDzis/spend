@@ -59,6 +59,16 @@ class RenderMonth(unittest.TestCase):
                          "January 2026: nothing logged (nothing in December 2025 either)\n")
 
 
+class RenderSub(unittest.TestCase):
+    def test_subcategories_indented_under_their_category(self):
+        this = {"transport:taxi": {"AMD": D("4200")}, "transport:public": {"AMD": D("300")},
+                "groceries": {"AMD": D("12300")}}
+        lines = report.render_month("2026-10", this, {}, sub=True).splitlines()
+        self.assertEqual([ln.split()[:2] for ln in lines[2:6]],
+                         [["groceries", "12,300"], ["transport", "4,500"], ["taxi", "4,200"], ["public", "300"]])
+        self.assertTrue(lines[4].startswith("    taxi"))
+
+
 class RenderRecent(unittest.TestCase):
     def test_numbered_from_the_end(self):
         self.dir = Path(tempfile.mkdtemp())

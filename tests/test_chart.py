@@ -63,6 +63,17 @@ class Views(unittest.TestCase):
         self.assertEqual([ln.split()[1] for ln in lines[1:]], ["45,000", "4,500"])
 
 
+class Subcategories(unittest.TestCase):
+    def test_bars_roll_up_and_drill_down(self):
+        es = [entry("2026-10-01", "1500", "transport:taxi"), entry("2026-10-02", "300", "transport:public"),
+              entry("2026-10-02", "900", "groceries")]
+        self.assertIn("  transport  ", chart.render_bars("2026-10", "AMD", es))
+        sub = chart.render_bars("2026-10", "AMD", es, within="transport")
+        self.assertIn("transport · AMD per subcategory", sub)
+        self.assertIn("  taxi  ", sub)
+        self.assertNotIn("groceries", sub)
+
+
 class Command(unittest.TestCase):
     def setUp(self):
         self.dir = Path(tempfile.mkdtemp())

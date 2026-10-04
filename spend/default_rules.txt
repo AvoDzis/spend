@@ -1,25 +1,59 @@
 # Default keyword rules for `spend`: one category per line, then its keywords.
 #   category: keyword, another, multi word phrase
+#   category/subcategory: keyword, …      (transport/taxi rolls up into transport)
 # A keyword matches whole words in the note, plurals too (taxi matches "taxis");
 # end it with * to match any word starting with it (pharm* matches "pharmacy").
 # When several match, the longest phrase wins ("yandex eats" beats "eats"), then
 # the one earliest in the note. Notes no rule matches go to `other`.
 # `spend fix` saves learned rules in your data dir (spend-rules.txt); they beat these.
 
-groceries: supermarket, grocery, groceries, market, sas, yerevan city, carrefour, nor zovq, parma, star supermarket, milk, bread, eggs, vegetables, fruit, meat, chicken, cheese, yandex lavka, продукты, սուպերմարկետ, tegut, rewe, lidl, aldi
-eating-out: restaurant, cafe, café, coffee, coffee shop, lunch, dinner, breakfast, brunch, pizza, burger, shawarma, khorovats, sushi, bar, pub, beer, takeaway, glovo, yandex eats, menu.am, kfc, mcdonalds, jazzve, кофе, wendys, burger king, starbucks, segafredo
-transport: taxi, gg, yandex go, yandex taxi, uber, bolt, bus, metro, subway, minibus, marshrutka, train, tram, fuel, petrol, benzin, parking, car wash, такси, տաքսի, ubr, oebb, wiener linien, gulf
-home: rent, furniture, ikea, cleaning, repair, plumber, household
-utilities: utilities, electricity, gas, water bill, heating, internet, ucom, viva, vivacell, team telecom, beeline, phone bill, mobile
-health: pharm*, doctor, dentist, dental, hospital, clinic, medicine, meds, pills, vitamins, аптека
+groceries: supermarket, grocery, groceries, market, sas, yerevan city, carrefour, nor zovq, parma, star supermarket, milk, bread, eggs, vegetables, fruit, meat, chicken, cheese, yandex lavka, tegut, rewe, lidl, aldi, продукты, սուպերմարկետ
+
+eating-out/restaurant: restaurant, eat out, eating out, lunch, dinner, breakfast, brunch, khorovats, sushi, takeaway
+eating-out/coffee: cafe, café, coffee, coffee shop, jazzve, starbucks, segafredo, кофе
+eating-out/fast-food: pizza, burger, shawarma, kfc, mcdonalds, wendys, burger king
+eating-out/delivery: glovo, yandex eats, menu.am, wolt
+
+transport/taxi: taxi, gg, yandex, yandex go, yandex taxi, uber, ubr, bolt, такси, տաքսի
+transport/scooter: scooter, jet app, whoosh
+transport/public: metro, subway, bus, minibus, marshrutka, train, tram, oebb, wiener linien
+transport/fuel: fuel, petrol, benzin, gulf, gas station
+transport/parking: parking, car wash
+
+home/rent: rent
+home/household: furniture, ikea, cleaning, repair, plumber, household
+
+utilities/internet-mobile: internet, ucom, viva, vivacell, team telecom, beeline, phone bill, mobile
+utilities/energy: utilities, electricity, gas, water bill, heating
+
+health/pharmacy: pharm*, medicine, meds, pills, vitamins, аптека
+health/doctor: doctor, dentist, dental, hospital, clinic
+
 personal-care: haircut, barber, salon, manicure, cosmetics, shampoo, soap, toothpaste, rossmann, dm
 clothes: clothes, clothing, jeans, shoes, sneakers, shirt, t-shirt, hoodie, jacket, coat, dress, pants, trousers, socks, zara
-shopping: amazon, globbing, onex, aliexpress, temu, wildberries, ozon, electronics, headphones, charger, iherb
-entertainment: cinema, movie, concert, theatre, theater, museum, game, bowling, party, club
-subscriptions: subscription, netflix, spotify, youtube premium, icloud, apple music, chatgpt, claude, patreon, apple.com, google one
+
+shopping/online: amazon, globbing, onex, aliexpress, temu, wildberries, ozon, iherb
+shopping/electronics: electronics, headphones, charger
+
+entertainment/events: cinema, movie, concert, theatre, theater, museum, game, bowling
+entertainment/nightlife: night out, nightlife, party, club, bar, pub, beer, drinks, drinking
+
+subscriptions/streaming: netflix, spotify, youtube premium, apple music
+subscriptions/cloud: icloud, google one, google drive, dropbox
+subscriptions/ai: claude, chatgpt, anthropic, openai
+subscriptions: subscription, patreon, apple.com
+
+growth/projects: porkbun, namecheap, godaddy, domain, dns, hosting, vercel, netlify, github
+growth/learning: course, udemy, coursera, book, lesson, tuition, school, workshop, conference
+growth/career: hirify, job portal, linkedin premium
+
 sport: gym, fitness, yoga, pool, swimming, football, tennis, climbing
-travel: hotel, hostel, airbnb, booking, flight, plane, airport, visa, lounge, mobimatter, souvenir, lagardere, relay, hubiz
-education: course, udemy, coursera, book, lesson, tuition, school
+
+travel/flights: flight, plane, airport, charter
+travel/stay: hotel, hostel, airbnb, booking
+travel: visa, lounge, mobimatter, souvenir, lagardere, relay, hubiz
+
 gifts: gift, present, flowers, birthday, donation, charity
 pets: pet, vet, cat food, dog food
 fees: fee, commission, bank, atm, tax, sms, գանձում
+transfers: personal transfer, transfer

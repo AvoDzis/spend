@@ -149,7 +149,7 @@ def run(args: list[str], dry_run: bool = False) -> int:
 
     verb = "would import" if dry_run else "imported"
     for e, _ in new:
-        print(f"{verb} {journal.fmt_amount(e.amount)} {e.currency} · {e.category} · {e.note} ({e.date})")
+        print(f"{verb} {journal.fmt_amount(e.amount)} {e.currency} · {journal.display(e.category)} · {e.note} ({e.date})")
     if skipped:
         print(f"\nskipped {len(skipped)} (add any real spending by hand with `spend <date> <amount> <what>`):")
         for reason, row in skipped:
