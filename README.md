@@ -87,7 +87,7 @@ spend month [YYYY-MM]               totals by category, per currency, vs last mo
 spend list [N]                      last N entries (1 = newest)
 spend chart [options]               text charts: bars, --trend N, --days, --cat C, --top N
 spend report [YYYY-MM] [--email]    month-end report (default: last month), printed or emailed
-spend fix last|N <cat> [--word kw]  re-tag an entry and learn the rule
+spend fix last|N <cat> [--word kw]  re-tag an entry and learn the rule (--once: just this entry)
 spend learn <kw> <cat>              add a keyword rule (also re-files matching 'other' entries)
 spend rm last|N [N …]               delete entries (asks first; -y skips it)
 spend cats                          categories and their keywords

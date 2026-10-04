@@ -8,7 +8,7 @@
   spend list [N]                           last N entries
   spend chart [--trend|--days|--cat C|--top]  text charts (spend chart -h for options)
   spend report [YYYY-MM] [--email]         month-end report (default: last month), printed or emailed
-  spend fix last|N <category> [--word kw]  change a category and learn the note (or just kw)
+  spend fix last|N <category> [--word kw]  change a category and learn the note (or just kw); --once: no rule
   spend learn <keyword> <category>         add a keyword rule
   spend rm last|N [N …]                    delete entries (asks first; -y skips the question)
   spend cats                               categories and their keywords
@@ -111,14 +111,15 @@ def main(argv: list[str] | None = None) -> int:
     if cmd == "import":
         return bankcsv.run(rest, dry_run)
     if cmd == "fix":
-        word = None
+        word, once = None, "--once" in rest
+        rest = [a for a in rest if a != "--once"]
         if "--word" in rest:
             i = rest.index("--word")
             rest, word = rest[:i], " ".join(rest[i + 1:])
         if len(rest) < 2 or word == "":
             print("usage: spend fix last|N <category> [--word <keyword>]", file=sys.stderr)
             return 2
-        return categories.fix(rest[0], " ".join(rest[1:]), word)
+        return categories.fix(rest[0], " ".join(rest[1:]), word, learn=not once)
     if cmd == "learn":
         if len(rest) < 2:
             print("usage: spend learn <keyword> <category>", file=sys.stderr)

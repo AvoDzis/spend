@@ -26,7 +26,7 @@ description: Log and look up Avo's spending with the `spend` CLI (hledger journa
 
 ## Rules
 - Show the CLI's output lines as they are; they're short.
-- If a line was logged as `other`, ask Avo once which category, then `spend fix last <cat>`: that also saves the rule for next time. By default it learns the whole note; when the note contains an obvious store or brand ("sas milk bread" → `sas`), add `--word <kw>` so the rule generalizes. `spend learn <kw> <cat>` adds a rule without an entry.
+- If a line was logged as `other`, ask Avo once which category, then `spend fix last <cat>`: that also saves the rule for next time. By default it learns the whole note; when the note contains an obvious store or brand ("sas milk bread" → `sas`), add `--word <kw>` so the rule generalizes. `spend learn <kw> <cat>` adds a rule without an entry. For a one-off (a gift or cake from a shop normally filed elsewhere), use `spend fix N <cat> --once`: no rule is saved.
 - A question the commands don't answer (e.g. "groceries in September", "biggest expenses") → query hledger read-only: `hledger -f "${SPEND_JOURNAL:-$HOME/Desktop/personal/budgeting/spend.journal}" bal expenses:groceries -p 2026-09` / `reg expenses -p thismonth`.
 - Exit 2 = couldn't parse the line: show the message and ask, don't guess.
 - Phone lines live in iCloud Drive, which Claude's Bash sandbox can block. If `spend month`/`list` says "phone entries not imported", or `spend inbox` says "permission denied", ask Avo to type `! spend inbox`, then continue.

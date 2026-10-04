@@ -143,9 +143,10 @@ def _learn(keyword: list[str], category: str, rules: list[Rule], known: set[str]
         print(f"re-filed {n} earlier 'other' entr{'y' if n == 1 else 'ies'} under {category}")
 
 
-def fix(target: str, category: str, word: str | None = None) -> int:
-    """`spend fix last|N <category> [--word <keyword>]`: re-tag an entry (N = Nth from the end)
-    and save a rule: the whole note, or just <keyword> when given."""
+def fix(target: str, category: str, word: str | None = None, learn: bool = True) -> int:
+    """`spend fix last|N <category> [--word <keyword>] [--once]`: re-tag an entry (N = Nth from the end)
+    and save a rule: the whole note, or just <keyword> when given; --once saves no rule (a one-off,
+    like a birthday cake from a shop you'd otherwise file under groceries)."""
     path = config.journal()
     n = 1 if target == "last" else int(target) if target.isdigit() else 0
     if n < 1:
@@ -165,7 +166,9 @@ def fix(target: str, category: str, word: str | None = None) -> int:
     if cat != e.category:
         journal.set_category(path, e, cat)
     print(f"fixed {journal.fmt_amount(e.amount)} {e.currency} · {change} · {e.note} ({e.date})")
-    if keyword:
+    if not learn:
+        print("one-off: no rule saved")
+    elif keyword:
         _learn(keyword, cat, rules, known)
     else:
         print(f"nothing to learn from {e.note!r}")

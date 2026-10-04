@@ -74,6 +74,15 @@ class Cli(unittest.TestCase):
         self.assertEqual((code, self.notes()), (2, ["a"]))
         self.assertIn("add -y", err.getvalue())
 
+    def test_fix_once_learns_nothing(self):
+        self.run_cli("6500 anare")
+        code, out = self.run_cli("fix", "last", "gifts", "--once")
+        self.assertEqual(code, 0)
+        self.assertIn("one-off: no rule saved", out)
+        self.assertEqual(journal.read_entries(self.dir / "spend.journal")[-1].category, "gifts")
+        self.run_cli("3000 anare")
+        self.assertEqual(journal.read_entries(self.dir / "spend.journal")[-1].category, "other")
+
     def test_rm_dry_run_and_bad_targets(self):
         self.run_cli("100 a")
         code, out = self.run_cli("-n", "rm", "1")

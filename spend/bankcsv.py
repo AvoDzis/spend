@@ -35,9 +35,11 @@ def clean(details: str) -> str:
     """"POS: SAS SUPERMARKET\\YEREVAN AM 123456" → "sas supermarket",
     "MCDONALDS VISA SALES WIEN 0" → "mcdonalds"."""
     s = re.sub(r"^[^:]{1,15}:\s*", "", details)          # "POS: " style prefix
+    s = re.sub(r"^[\w.]{2,12}\s?\*\s?", "", s)            # payment processor: "POLAR* HIRIFY" → "HIRIFY"
     s = s.replace("\\", " ").replace("*", " ")
     s = re.split(r"\s+(?:e?pos\s+purchase|purchase\s+po\w*|visa\s+sales)\b", s, flags=re.I)[0]  # the bank's own words
-    s = re.sub(r"\s+[A-Z]{2}\s+\d{3,}\s*$", "", s)       # trailing country code + terminal id
+    s = re.sub(r"\s+վիրտ\s*$", "", s)                     # "virtual card" marker
+    s = re.sub(r"\s+(?:AM|[A-Z]{2}\s+\d+)\s*$", "", s)     # trailing country code + terminal id
     s = re.sub(r"\s\d{3,}\b", " ", s)                     # stray long numbers
     s = re.sub(r"\s+yerevan(?:\s+\w{1,2})?\s*$", "", s, flags=re.I)  # the city adds nothing
     return re.sub(r"\s+", " ", s).strip(" .,-/").lower() or details.strip().lower()
