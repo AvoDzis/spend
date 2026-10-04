@@ -5,7 +5,8 @@
   spend inbox                              import lines from the iPhone inbox
   spend month [YYYY-MM]                    totals by category, per currency
   spend list [N]                           last N entries
-  spend fix last|N <category>              change a category (and learn the rule)
+  spend fix last|N <category> [--word kw]  change a category and learn the note (or just kw)
+  spend learn <keyword> <category>         add a keyword rule
   spend cats                               categories and their keywords
 
 Options: -n / --dry-run (show, don't write), --src <name> (tag where it came from; default cli).
@@ -15,7 +16,7 @@ import sys
 from . import categories, config, inbox, journal, report
 from .parse import ParseError, parse_many
 
-COMMANDS = {"add", "inbox", "month", "list", "fix", "cats", "help"}
+COMMANDS = {"add", "inbox", "month", "list", "fix", "learn", "cats", "help"}
 
 
 def add(text: str, dry_run: bool = False, source: str = "cli") -> int:
@@ -60,10 +61,19 @@ def main(argv: list[str] | None = None) -> int:
     if cmd == "list":
         return report.recent(int(rest[0]) if rest else 10)
     if cmd == "fix":
-        if len(rest) < 2:
-            print("usage: spend fix last|N <category>", file=sys.stderr)
+        word = None
+        if "--word" in rest:
+            i = rest.index("--word")
+            rest, word = rest[:i], " ".join(rest[i + 1:])
+        if len(rest) < 2 or word == "":
+            print("usage: spend fix last|N <category> [--word <keyword>]", file=sys.stderr)
             return 2
-        return categories.fix(rest[0], " ".join(rest[1:]))
+        return categories.fix(rest[0], " ".join(rest[1:]), word)
+    if cmd == "learn":
+        if len(rest) < 2:
+            print("usage: spend learn <keyword> <category>", file=sys.stderr)
+            return 2
+        return categories.learn(" ".join(rest[:-1]), rest[-1])
     if cmd == "cats":
         return categories.show()
     return 2
