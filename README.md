@@ -88,7 +88,7 @@ spend list [N]                      last N entries (1 = newest)
 spend chart [options]               text charts: bars, --trend N, --days, --cat C, --top N
 spend report [YYYY-MM] [--email]    month-end report (default: last month), printed or emailed
 spend fix last|N <cat> [--word kw]  re-tag an entry and learn the rule
-spend learn <kw> <cat>              add a keyword rule
+spend learn <kw> <cat>              add a keyword rule (also re-files matching 'other' entries)
 spend rm last|N [N …]               delete entries (asks first; -y skips it)
 spend cats                          categories and their keywords
 spend inbox                         import iPhone lines (month and list do this for you)
@@ -152,8 +152,9 @@ spend -n import export.csv --month 2026-09   # preview
 spend import export.csv --month 2026-09
 ```
 
-Card payments become expenses in the currency you paid, tagged `src:bank` (shop names are cleaned up
-and categorized like any other line). Refunds and transfers are skipped and listed. Each row is
+Card payments and bill payments (like `Ucom Payment: …` or city parking) become expenses in the
+currency you paid, tagged `src:bank`; shop names are cleaned up and categorized like any other line.
+Personal transfers and refunds are skipped and listed; incoming money is ignored. Each row is
 imported once, so re-running or overlapping exports is safe. Use it only for months you didn't log by
 hand, or you'd count the same purchase twice. (The importer reads one Armenian bank's export format;
 other banks need a small adapter.)

@@ -5,8 +5,9 @@ The export has one row per transaction:
   "Transaction amount","Transaction amount in account currency"
   "12/09/26, 18:40", …, "Քարտային գործարք", "POS: SAS SUPERMARKET\\YEREVAN AM 123456", "-4,500.00 AMD", …
 
-Card payments (negative amounts) become expenses in the paid currency, tagged src:bank. Refunds,
-incoming money and transfers are skipped and listed, so nothing is guessed. Every imported row is
+Card payments and bill payments (outgoing transfers like "Ucom Payment: …" or city parking) become
+expenses in the paid currency, tagged src:bank. Personal transfers out and card refunds are skipped
+and listed, since only you know what they were; incoming money is ignored. Every imported row is
 remembered (config.import_state()), so importing the same or an overlapping export twice is safe.
 """
 import csv
@@ -24,6 +25,7 @@ from .parse import Expense
 SOURCE = "bank"
 COLUMNS = ["Transaction date", "Transaction type", "Transaction details", "Transaction amount"]
 CARD = "Քարտային գործարք"  # card transaction; the other type seen is "Փոխանցում հաշվին" (transfer)
+PERSONAL = re.compile(r"personal transfer|transfer of own funds|անձնական փոխանցում", re.I)
 DATE_RE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{2}|\d{4})")
 AMOUNT_RE = re.compile(r"^\s*([+-]?)\s*([\d,]+(?:\.\d+)?)\s*([A-Z]{3})\s*$")
 STATE_HEADER = "# spend import: sha256 of every bank-CSV row already imported (one per line)\n"
@@ -39,6 +41,16 @@ def clean(details: str) -> str:
     s = re.sub(r"\s\d{3,}\b", " ", s)                     # stray long numbers
     s = re.sub(r"\s+yerevan(?:\s+\w{1,2})?\s*$", "", s, flags=re.I)  # the city adds nothing
     return re.sub(r"\s+", " ", s).strip(" .,-/").lower() or details.strip().lower()
+
+
+def clean_transfer(details: str) -> str:
+    """"Ucom Payment: 123 / ab1c" → "ucom payment"; "|ONLINE| 12BX345, Zone A, 2 hours, …" → "parking zone a"."""
+    d = details.strip()
+    if d.upper().startswith("|ONLINE|") and re.search(r"\bzone\b", d, re.I):
+        zone = re.search(r"\bzone\s+(\w)", d, re.I)
+        return f"parking zone {zone[1].lower()}" if zone else "parking"
+    m = re.match(r"^(.{2,40}?)\s*payment\s*:", d, re.I)
+    return f"{m[1].strip().lower()} payment" if m else clean(d)
 
 
 def parse_date(text: str) -> date:
@@ -67,13 +79,13 @@ def key(row: dict) -> str:
 
 
 def read(path: Path, month: str | None = None):
-    """(expenses with their row keys, skipped rows as (reason, row)) from one export."""
+    """(expenses with their row keys, skipped rows as (reason, row), # incoming) from one export."""
     with open(path, encoding="utf-8-sig", newline="") as fh:
         reader = csv.DictReader(fh)
         missing = [c for c in COLUMNS if c not in (reader.fieldnames or [])]
         if missing:
             raise ValueError(f"not a bank export this importer knows (missing columns: {', '.join(missing)})")
-        found, skipped = [], []
+        found, skipped, incoming = [], [], 0
         for row in reader:
             try:
                 when = parse_date(row["Transaction date"])
@@ -83,14 +95,19 @@ def read(path: Path, month: str | None = None):
                 continue
             if month and when.strftime("%Y-%m") != month:
                 continue
-            if row["Transaction type"].strip() != CARD:
-                skipped.append(("transfer", row))
-            elif amount >= 0:
-                skipped.append(("refund or incoming", row))
+            card = row["Transaction type"].strip() == CARD
+            details = row["Transaction details"]
+            if amount >= 0:
+                if card:
+                    skipped.append(("refund", row))
+                else:
+                    incoming += 1
+            elif not card and PERSONAL.search(details):
+                skipped.append(("personal transfer", row))
             else:
-                note = clean(row["Transaction details"])
+                note = clean(details) if card else clean_transfer(details)
                 found.append((Expense(when, -amount, currency, note, categories.categorize(note)), key(row)))
-    return found, skipped
+    return found, skipped, incoming
 
 
 def run(args: list[str], dry_run: bool = False) -> int:
@@ -108,7 +125,7 @@ def run(args: list[str], dry_run: bool = False) -> int:
         return 2
     path = Path(args[0]).expanduser()
     try:
-        found, skipped = read(path, month)
+        found, skipped, incoming = read(path, month)
     except (OSError, ValueError) as e:
         print(f"spend import: {e}", file=sys.stderr)
         return 1
@@ -135,5 +152,6 @@ def run(args: list[str], dry_run: bool = False) -> int:
                   f"{row.get('Transaction details', '').strip()}")
     others = sum(1 for e, _ in new if e.category == "other")
     print(f"\n{verb} {len(new)}, already there {len(found) - len(new)}, skipped {len(skipped)}"
+          + (f", ignored {incoming} incoming" if incoming else "")
           + (f"; {others} in 'other': see `spend list`, then `spend fix N <cat> --word <shop>`" if others else ""))
     return 0
