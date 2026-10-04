@@ -90,6 +90,14 @@ class Inbox(unittest.TestCase):
                           ("2026-10-04", "bread", Decimal("900"), "AMD"),
                           ("2026-10-03", "gym", Decimal("5000"), "AMD")])
 
+    def test_iphone_short_date_style(self):
+        self.phone("04.10.26, 18:18 100 shortcut test", "5.9.2026 09:15:00 800 taxi", "31.02.26, 10:00 500 bad date")
+        code, _, err = self.run_inbox()
+        self.assertEqual(code, 1)
+        self.assertIn("bad date", err)
+        self.assertEqual([(e.date, e.note) for e in self.entries()],
+                         [("2026-10-04", "shortcut test"), ("2026-09-05", "taxi")])
+
     def test_bad_lines_reported_once_good_ones_imported(self):
         self.phone("800 supermarket", "2026-10-04 10:00:00 coffee", "2026-10-04 10:01:00 300 tea")
         code, out, err = self.run_inbox()

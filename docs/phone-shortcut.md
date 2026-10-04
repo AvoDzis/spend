@@ -40,7 +40,7 @@ Watch the format string: lowercase `yyyy` (capital `YYYY` is the week-year and g
 New Year), capital `MM` (month; `mm` is minutes) and capital `HH` (24-hour clock).
 
 Step 4 must give exactly `2026-10-04 14:32:05 800dram supermarket`: the timestamp first, one space,
-then what you typed. `spend inbox` also accepts the **ISO 8601** date format (with time) if you pick
+then what you typed. `spend inbox` also accepts the phone's default short style (`04.10.26, 18:18`, day first) and **ISO 8601** (with time) if you pick
 that in step 3 instead of Custom.
 
 ### Check it once

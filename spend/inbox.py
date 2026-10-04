@@ -28,6 +28,11 @@ LINE_RE = re.compile(
     r"^(?P<date>\d{4}-\d{2}-\d{2})[T ]\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?"
     r"(?:\s*\|\s*|\s+|$)(?P<text>.*)$"
 )
+# the iPhone's own short date style (day first): "04.10.26, 18:18", "04.10.2026 18:18:05"
+DOT_RE = re.compile(
+    r"^(?P<d>\d{1,2})\.(?P<m>\d{1,2})\.(?P<y>\d{4}|\d{2}),?\s+\d{1,2}:\d{2}(?::\d{2})?"
+    r"(?:\s*\|\s*|\s+|$)(?P<text>.*)$"
+)
 STATE_HEADER = "# spend inbox: sha256 of every inbox line already handled (one per line)\n"
 
 
@@ -37,13 +42,17 @@ def key(line: str) -> str:
 
 def parse_line(line: str) -> list[Expense]:
     """Expenses in one inbox line ([] for a timestamp with nothing after it)."""
-    m = LINE_RE.match(line)
+    m = LINE_RE.match(line) or DOT_RE.match(line)
     if not m:
         raise ParseError("no timestamp at the start (the Shortcut writes 'YYYY-MM-DD HH:MM:SS <expense>')")
     try:
-        day = date.fromisoformat(m["date"])
+        if "date" in m.groupdict():
+            day = date.fromisoformat(m["date"])
+        else:
+            y = int(m["y"])
+            day = date(y + 2000 if y < 100 else y, int(m["m"]), int(m["d"]))
     except ValueError:
-        raise ParseError(f"bad date {m['date']!r}")
+        raise ParseError(f"bad date at the start of {line!r}")
     text = m["text"].strip()
     return parse_many(text, day) if text else []
 
