@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Installed by `make schedule EMAIL=…`: emails last month's report on the 1st at 10:00.
+     If the Mac is asleep then, it runs when the Mac wakes. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.spend.month-report</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>@REPO@/bin/spend</string>
+    <string>report</string>
+    <string>--email</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>SPEND_EMAIL</key><string>@EMAIL@</string>
+    <key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Day</key><integer>1</integer>
+    <key>Hour</key><integer>10</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+  <key>StandardOutPath</key><string>@LOG@</string>
+  <key>StandardErrorPath</key><string>@LOG@</string>
+</dict>
+</plist>
