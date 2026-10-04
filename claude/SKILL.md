@@ -22,7 +22,7 @@ description: Log and look up Avo's spending with the `spend` CLI (hledger journa
 | `/spend cats` | `spend cats` |
 
 ## Line format
-`<amount><currency> <what>`, several separated by `, ` or `;`. No currency means AMD. Currencies: `dram`/`amd`/`֏`, `usd`/`$`, `eur`/`€`, `rub`, `gbp`. `1.5k` = 1500. Dates: `today` (default), `yesterday`, `YYYY-MM-DD`. Quote anything with `$` for the shell (`spend '$50 jeans'`), or write `50usd`.
+`<amount><currency> <what>`, several separated by `, ` or `;`. No currency means AMD. Currencies: `dram`/`amd`/`֏`, `usd`/`$`, `eur`/`€`, `rub`, `gbp`. `1.5k` = 1500. Dates: `today` (default), `yesterday`, `oct 1` / `1 oct`, `YYYY-MM-DD`; a date carries on to the items after it in the same line (`oct 1 1200 taxi, 4500 sas, oct 2 300 coffee`). Quote anything with `$` for the shell (`spend '$50 jeans'`), or write `50usd`.
 
 ## Rules
 - Show the CLI's output lines as they are; they're short.

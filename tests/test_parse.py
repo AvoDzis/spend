@@ -42,6 +42,16 @@ class ParseOne(unittest.TestCase):
         self.check("yesterday 1200 taxi", "1200", "AMD", "taxi", date(2026, 10, 3))
         self.check("2026-09-30 5000 gym", "5000", "AMD", "gym", date(2026, 9, 30))
 
+    def test_short_dates(self):
+        self.check("oct 1 1200 taxi", "1200", "AMD", "taxi", date(2026, 10, 1))
+        self.check("1 oct 1200 taxi", "1200", "AMD", "taxi", date(2026, 10, 1))
+        self.check("Oct 3: 800 bus", "800", "AMD", "bus", date(2026, 10, 3))
+        self.check("2nd october 300 coffee", "300", "AMD", "coffee", date(2026, 10, 2))
+        self.check("sep30 5000 gym", "5000", "AMD", "gym", date(2026, 9, 30))
+        self.check("1200 taxi oct 1", "1200", "AMD", "taxi", date(2026, 10, 1))
+        self.check("dec 30 5000 gift", "5000", "AMD", "gift", date(2025, 12, 30))  # most recent Dec 30
+        self.check("oct 800 taxi", "800", "AMD", "oct taxi")  # no day: just a word
+
     def test_errors(self):
         with self.assertRaises(ParseError):
             parse_one("supermarket", TODAY)
@@ -58,6 +68,13 @@ class ParseMany(unittest.TestCase):
         es = parse_many("4500 supermarket, milk and bread", TODAY)
         self.assertEqual(len(es), 1)
         self.assertEqual(es[0].note, "supermarket, milk and bread")
+
+    def test_date_carries_on(self):
+        es = parse_many("oct 1 1200 taxi, 4500 sas, oct 2 3000 coffee; 800 bus, oct 3 900 lunch", TODAY)
+        self.assertEqual([(e.date.day, e.note) for e in es],
+                         [(1, "taxi"), (1, "sas"), (2, "coffee"), (2, "bus"), (3, "lunch")])
+        self.assertEqual([e.date for e in parse_many("300 coffee, yesterday 800 bus, 500 snack", TODAY)],
+                         [TODAY, date(2026, 10, 3), date(2026, 10, 3)])
 
     def test_thousands_comma_not_split(self):
         self.assertEqual(len(parse_many("1,500 coffee; 800 bus", TODAY)), 2)
