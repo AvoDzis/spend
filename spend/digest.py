@@ -80,7 +80,17 @@ class Digest:
         return sum((e.amount for e in self.of(cur, entries)), ZERO)
 
     def categories(self, cur: str) -> list[tuple[str, Decimal]]:
-        return sorted(sum_by(self.of(cur), lambda e: e.category).items(), key=lambda kv: (-kv[1], kv[0]))
+        """Totals per category; subcategories count towards their category."""
+        return sorted(sum_by(self.of(cur), lambda e: journal.parent(e.category)).items(),
+                      key=lambda kv: (-kv[1], kv[0]))
+
+    def subcategories(self, cur: str, category: str) -> list[tuple[str, Decimal]]:
+        """[("taxi", 12400), ("metro", 600)] within one category; [] when it has no subcategories."""
+        mine = [e for e in self.of(cur) if journal.in_category(e.category, category)]
+        if not any(":" in e.category for e in mine):
+            return []
+        by = sum_by(mine, lambda e: e.category.split(":", 1)[1] if ":" in e.category else "general")
+        return sorted(by.items(), key=lambda kv: (-kv[1], kv[0]))
 
     def days(self) -> dict[int, Decimal]:
         return sum_by(self.of(self.main), lambda e: int(e.date[8:10]))
@@ -133,7 +143,7 @@ class Digest:
             d = max(days, key=lambda k: days[k])
             when = date.fromisoformat(f"{self.ym}-{d:02d}")
             out.append(f"Biggest day: **{when:%A, %b %-d}**, {money(days[d], cur)}.")
-        subs = [e for e in self.month if e.category == "subscriptions"]
+        subs = [e for e in self.month if journal.in_category(e.category, "subscriptions")]
         if subs:
             by = sum_by(subs, lambda e: e.currency)
             per = " + ".join(money(by[c], c) for c in self.curs if c in by)
@@ -189,8 +199,9 @@ def _h2(title: str, note: str = "") -> str:
             f"{escape(title)}{sub}</td></tr>")
 
 
-def _bars(rows: list[tuple[str, Decimal]], cur: str) -> str:
+def _bars(rows: list[tuple[str, Decimal]], cur: str, subs: dict[str, list[tuple[str, Decimal]]] | None = None) -> str:
     top, total = rows[0][1], sum(v for _, v in rows)
+    subs = subs or {}
     trs = []
     for name, v in rows:
         w = max(1, round(float(v) / float(top) * 100))
@@ -203,6 +214,10 @@ def _bars(rows: list[tuple[str, Decimal]], cur: str) -> str:
             f'font-variant-numeric:tabular-nums" class="ink">{fmt_money(v, cur)}</td>'
             f'<td style="padding:3px 0 3px 10px;font:400 13px/1.3 {FONT};color:{INK_3};text-align:right;white-space:nowrap;'
             f'font-variant-numeric:tabular-nums">{share}%</td></tr>')
+        if subs.get(name):
+            parts = " · ".join(f"{escape(s)} {fmt_money(a, cur)}" for s, a in subs[name])
+            trs.append(f'<tr><td></td><td colspan="3" style="padding:0 0 6px;font:400 12px/1.4 {FONT};color:{INK_3}" '
+                       f'class="ink3">{parts}</td></tr>')
     return (f'<tr><td style="padding:0 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
             + "".join(trs) + "</table></td></tr>")
 
@@ -249,7 +264,7 @@ def _top(d: Digest) -> str:
                 f'<tr><td style="padding:7px 10px 7px 0;border-top:1px solid {LINE};font:400 13px {FONT};color:{INK_3};'
                 f'white-space:nowrap">{date.fromisoformat(e.date):%b %-d}</td>'
                 f'<td style="padding:7px 10px 7px 0;border-top:1px solid {LINE};font:400 14px {FONT};color:{INK}" class="ink">'
-                f'{escape(pretty(e.note))}<br><span style="font-size:12px;color:{INK_3}" class="ink3">{escape(e.category)}</span></td>'
+                f'{escape(pretty(e.note))}<br><span style="font-size:12px;color:{INK_3}" class="ink3">{escape(journal.display(e.category))}</span></td>'
                 f'<td style="padding:7px 0;border-top:1px solid {LINE};font:600 14px {FONT};color:{INK};text-align:right;'
                 f'white-space:nowrap;font-variant-numeric:tabular-nums" class="ink">{money(e.amount, cur)}</td></tr>')
     return (f'<tr><td style="padding:0 28px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
@@ -312,7 +327,7 @@ def render_html(d: Digest) -> str:
         if cats:
             body.append(_h2("Where it went" if cur == d.main else f"Spent in {cur}",
                             f"{cur}, by category" if cur == d.main else ""))
-            body.append(_bars(cats, cur))
+            body.append(_bars(cats, cur, {c: d.subcategories(cur, c) for c, _ in cats}))
     if d.days():
         body.append(_h2("Day by day", f"darker = more {d.main} spent"))
         body.append(_calendar(d))

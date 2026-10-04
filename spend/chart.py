@@ -48,18 +48,23 @@ def pct(part: Decimal, whole: Decimal) -> str:
     return f"{round(float(part) / float(whole) * 100)}%" if whole else ""
 
 
-def render_bars(ym: str, cur: str, entries: list[journal.Entry]) -> str:
+def render_bars(ym: str, cur: str, entries: list[journal.Entry], within: str | None = None) -> str:
+    """Bars per category for the month; `within="transport"` shows that category's subcategories."""
     totals: dict[str, Decimal] = defaultdict(Decimal)
     for e in entries:
         if e.date.startswith(ym):
-            totals[e.category] += e.amount
+            if within is None:
+                totals[journal.parent(e.category)] += e.amount
+            elif journal.in_category(e.category, within):
+                totals[e.category.split(":", 1)[1] if ":" in e.category else "(general)"] += e.amount
     if not totals:
         return f"{month_name(ym)}: nothing in {cur}\n"
     rows = sorted(totals.items(), key=lambda kv: (-kv[1], kv[0]))
     total, top = sum(totals.values()), rows[0][1]
     w = max(len("total"), *(len(c) for c, _ in rows))
     aw = len(fmt_money(total, cur))
-    out = [f"{month_name(ym)} · {cur} per category"]
+    out = [f"{month_name(ym)} · {cur} per category" if within is None else
+           f"{month_name(ym)} · {journal.display(within)} · {cur} per subcategory"]
     out += [f"  {c:<{w}}  {bar(v, top):<{WIDTH}}  {fmt_money(v, cur):>{aw}}  {pct(v, total):>4}" for c, v in rows]
     out.append(f"  {'total':<{w}}  {'':<{WIDTH}}  {fmt_money(total, cur):>{aw}}")
     return "\n".join(out) + "\n"
@@ -74,7 +79,7 @@ def render_trend(end: str, n: int, cur: str, entries: list[journal.Entry], title
         m = e.date[:7]
         if m in per_month:
             per_month[m] += e.amount
-            per_cat[e.category][m] += e.amount
+            per_cat[journal.parent(e.category)][m] += e.amount
     title = title or f"Last {n} months · {cur}"
     top = max(per_month.values())
     if not top:
@@ -117,9 +122,10 @@ def render_top(ym: str, n: int, cur: str, entries: list[journal.Entry]) -> str:
     if not picked:
         return f"{month_name(ym)}: nothing in {cur}\n"
     aw = max(len(fmt_money(e.amount, cur)) for e in picked)
-    cw = max(len(e.category) for e in picked)
+    cw = max(len(journal.display(e.category)) for e in picked)
     out = [f"{month_name(ym)} · biggest {len(picked)} in {cur}"]
-    out += [f"  {e.date}  {fmt_money(e.amount, cur):>{aw}}  {e.category:<{cw}}  {e.note}" for e in picked]
+    out += [f"  {e.date}  {fmt_money(e.amount, cur):>{aw}}  {journal.display(e.category):<{cw}}  {e.note}"
+            for e in picked]
     return "\n".join(out) + "\n"
 
 
@@ -131,7 +137,8 @@ def run(args: list[str]) -> int:
     p.add_argument("--currency", metavar="CUR", default=DEFAULT_CURRENCY, help="AMD (default), USD, EUR…")
     p.add_argument("--trend", nargs="?", const=6, type=int, metavar="N", help="last N months (default 6)")
     p.add_argument("--days", action="store_true", help="calendar of the month, shaded by spending")
-    p.add_argument("--cat", metavar="CATEGORY", help="one category over the last 6 months (or --trend N)")
+    p.add_argument("--cat", metavar="CATEGORY", help="one category: its subcategories this month, and the "
+                   "last 6 months (or --trend N); transport/taxi for one subcategory")
     p.add_argument("--top", nargs="?", const=10, type=int, metavar="N", help="biggest N expenses (default 10)")
     try:
         a = p.parse_args(args)
@@ -149,8 +156,12 @@ def run(args: list[str]) -> int:
     views = []
     if a.cat:
         cat = journal.account_name(a.cat)
-        views.append(render_trend(ym, a.trend or 6, cur, [e for e in entries if e.category == cat],
-                                  title=f"{cat} · last {a.trend or 6} months · {cur}", by_category=False))
+        mine = [e for e in entries if journal.in_category(e.category, cat)]
+        if any(e.category != cat for e in mine):
+            views.append(render_bars(ym, cur, mine, within=cat))
+        views.append(render_trend(ym, a.trend or 6, cur, mine,
+                                  title=f"{journal.display(cat)} · last {a.trend or 6} months · {cur}",
+                                  by_category=False))
     elif a.trend:
         views.append(render_trend(ym, a.trend, cur, entries))
     if a.days:

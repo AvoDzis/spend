@@ -38,9 +38,11 @@ class Isolated(unittest.TestCase):
 
 class Defaults(Isolated):
     def test_common_notes(self):
-        for note, cat in [("supermarket", "groceries"), ("taxi", "transport"), ("jeans", "clothes"),
-                          ("coffee", "eating-out"), ("rent", "home"), ("gym", "sport"),
-                          ("netflix", "subscriptions"), ("dentist", "health"), ("gas", "utilities")]:
+        for note, cat in [("supermarket", "groceries"), ("taxi", "transport:taxi"), ("jeans", "clothes"),
+                          ("coffee", "eating-out:coffee"), ("rent", "home:rent"), ("gym", "sport"),
+                          ("netflix", "subscriptions:streaming"), ("dentist", "health:doctor"),
+                          ("gas", "utilities:energy"), ("scooter", "transport:scooter"),
+                          ("dns porkbun", "growth:projects"), ("night out drinking", "entertainment:nightlife")]:
             self.assertEqual(categorize(note), cat, note)
 
     def test_unknown_is_other(self):
@@ -49,23 +51,23 @@ class Defaults(Isolated):
         self.assertEqual(categorize(""), "other")
 
     def test_case_plurals_and_punctuation(self):
-        self.assertEqual(categorize("Taxis"), "transport")
+        self.assertEqual(categorize("Taxis"), "transport:taxi")
         self.assertEqual(categorize("SAS, milk"), "groceries")
-        self.assertEqual(categorize("buses"), "transport")
+        self.assertEqual(categorize("buses"), "transport:public")
         self.assertEqual(categorize("2 t-shirts"), "clothes")
-        self.assertEqual(categorize("menu.am order"), "eating-out")
-        self.assertEqual(categorize("McDonald's"), "eating-out")
+        self.assertEqual(categorize("menu.am order"), "eating-out:delivery")
+        self.assertEqual(categorize("McDonald's"), "eating-out:fast-food")
 
     def test_prefix_keyword(self):
-        self.assertEqual(categorize("pharmacy"), "health")
+        self.assertEqual(categorize("pharmacy"), "health:pharmacy")
 
     def test_whole_words_only(self):
         self.assertEqual(categorize("barbecue sauce"), "other")  # not "bar"
 
     def test_longest_phrase_then_earliest_word(self):
-        self.assertEqual(categorize("yandex eats"), "eating-out")
-        self.assertEqual(categorize("yandex go"), "transport")
-        self.assertEqual(categorize("taxi to supermarket"), "transport")
+        self.assertEqual(categorize("yandex eats"), "eating-out:delivery")
+        self.assertEqual(categorize("yandex go"), "transport:taxi")
+        self.assertEqual(categorize("taxi to supermarket"), "transport:taxi")
         self.assertEqual(categorize("supermarket by taxi"), "groceries")
         self.assertEqual(categorize("cat food"), "pets")
 
@@ -75,7 +77,7 @@ class Defaults(Isolated):
             cat, sep, kws = line.split("#", 1)[0].partition(":")
             if not sep:
                 continue
-            self.assertEqual(journal.account_name(cat), cat.strip(), "category must be an account name")
+            self.assertEqual(journal.display(journal.account_name(cat)), cat.strip(), "category must be clean")
             for kw in kws.split(","):
                 ws = tuple(categories.words(kw, keep_star=True))
                 self.assertTrue(ws, f"empty keyword in {cat}")
@@ -83,11 +85,49 @@ class Defaults(Isolated):
                 seen[ws] = cat
 
 
+class Subcategories(Isolated):
+    def test_typed_with_a_slash_stored_with_a_colon(self):
+        self.assertEqual(journal.account_name("Transport/Taxi"), "transport:taxi")
+        self.assertEqual(journal.account_name("transport:taxi"), "transport:taxi")
+        self.assertEqual(journal.display("transport:taxi"), "transport/taxi")
+        self.assertTrue(journal.in_category("transport:taxi", "transport"))
+        self.assertFalse(journal.in_category("transportation", "transport"))
+
+    def test_fix_and_learn_with_subcategories(self):
+        self.run_cli("1200 aragil")
+        code, out = self.run_cli("fix", "last", "transport/taxi")
+        self.assertEqual(self.cats(), ["transport:taxi"])
+        self.assertIn("other → transport/taxi", out)
+        self.assertIn("transport/taxi: aragil", self.rules.read_text())
+        self.assertEqual(categorize("aragil"), "transport:taxi")
+        code, out = self.run_cli("learn", "bolt", "transport")  # defaults already say transport/taxi
+        self.assertIn('rules already file "bolt" under transport/taxi', out)
+
+    def test_recat_only_refines(self):
+        self.rules.write_text("")
+        with open(self.journal, "w") as fh:
+            fh.write(journal.HEADER)
+            for note, cat in [("yandex go", "transport"), ("scooter", "other"), ("anare cake", "gifts"),
+                              ("taxi", "gifts"), ("hirify", "career")]:
+                fh.write(f"2026-09-01 {note}  ; src:cli\n    expenses:{cat}    100 AMD\n    assets:wallet\n\n")
+        code, out = self.run_cli("-n", "recat")
+        self.assertIn("would re-file 2 entries", out)
+        self.assertEqual(self.cats(), ["transport", "other", "gifts", "gifts", "career"])
+        self.run_cli("recat")
+        # refined: transport → transport/taxi, other → transport/scooter; manual choices stay
+        self.assertEqual(self.cats(), ["transport:taxi", "transport:scooter", "gifts", "gifts", "career"])
+
+    def test_cats_shows_a_tree(self):
+        code, out = self.run_cli("cats")
+        self.assertIn("\ntransport\n", out)
+        self.assertIn("\n  taxi ", out)
+
+
 class Learned(Isolated):
     def test_learned_rule_beats_default_of_same_length(self):
         self.rules.write_text("groceries: coffee\n")
         self.assertEqual(categorize("coffee"), "groceries")
-        self.assertEqual(categorize("coffee shop"), "eating-out")  # longer default still wins
+        self.assertEqual(categorize("coffee shop"), "eating-out:coffee")  # longer default still wins
 
     def test_later_line_wins_and_bad_lines_ignored(self):
         self.rules.write_text("# comment\nnonsense line\nshopping: aragil\ntransport: aragil\n: orphan\n")
@@ -121,11 +161,11 @@ class Fix(Isolated):
 
     def test_fixing_a_wrong_default_learns_the_phrase_not_the_word(self):
         self.run_cli("5000", "coffee", "beans")
-        self.assertEqual(self.cats(), ["eating-out"])
+        self.assertEqual(self.cats(), ["eating-out:coffee"])
         self.run_cli("fix", "last", "groceries")
         self.assertEqual(self.cats(), ["groceries"])
         self.assertEqual(categorize("coffee beans 1kg"), "groceries")
-        self.assertEqual(categorize("coffee"), "eating-out")
+        self.assertEqual(categorize("coffee"), "eating-out:coffee")
 
     def test_fix_with_word_learns_just_that_word(self):
         self.run_cli("3000", "zov", "milk", "and", "bread")

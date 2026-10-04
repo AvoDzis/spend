@@ -161,7 +161,7 @@ def run(dry_run: bool = False) -> int:
     logged, bad, old = _import(path, dry_run)
     verb = "would log" if dry_run else "logged"
     for e in logged:
-        print(f"{verb} {journal.fmt_amount(e.amount)} {e.currency} · {e.category} · {e.note} ({e.date}, phone)")
+        print(f"{verb} {journal.fmt_amount(e.amount)} {e.currency} · {journal.display(e.category)} · {e.note} ({e.date}, phone)")
     if bad:
         _report_bad(bad)
     if not logged and not bad:
@@ -188,7 +188,7 @@ def sync() -> str | None:
         return None
     logged, bad, _ = _import(path, dry_run=False)
     for e in logged:
-        print(f"+ from phone: {journal.fmt_amount(e.amount)} {e.currency} · {e.category} · {e.note} ({e.date})")
+        print(f"+ from phone: {journal.fmt_amount(e.amount)} {e.currency} · {journal.display(e.category)} · {e.note} ({e.date})")
     if bad:
         _report_bad(bad)
         problem = f"{len(bad)} phone line(s) couldn't be read; see `spend inbox`"

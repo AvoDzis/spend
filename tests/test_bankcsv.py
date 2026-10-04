@@ -81,10 +81,10 @@ class Import(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual([(e.date, e.amount, e.currency, e.category, e.note, e.tags) for e in self.entries()], [
             ("2026-09-12", D("4500"), "AMD", "groceries", "sas supermarket", "src:bank"),
-            ("2026-09-13", D("1200"), "AMD", "transport", "yandex. go", "src:bank"),
-            ("2026-09-14", D("9.8"), "EUR", "eating-out", "mcdonalds", "src:bank"),
-            ("2026-09-17", D("3000"), "AMD", "utilities", "ucom payment", "src:bank"),
-            ("2026-09-18", D("200"), "AMD", "transport", "parking zone a", "src:bank"),
+            ("2026-09-13", D("1200"), "AMD", "transport:taxi", "yandex. go", "src:bank"),
+            ("2026-09-14", D("9.8"), "EUR", "eating-out:fast-food", "mcdonalds", "src:bank"),
+            ("2026-09-17", D("3000"), "AMD", "utilities:internet-mobile", "ucom payment", "src:bank"),
+            ("2026-09-18", D("200"), "AMD", "transport:parking", "parking zone a", "src:bank"),
             ("2026-10-02", D("2000"), "AMD", "other", "zorik llc", "src:bank")])
         self.assertIn("refund: 15/09/26", out)
         self.assertIn("personal transfer: 16/09/26", out)
@@ -99,7 +99,7 @@ class Import(unittest.TestCase):
         code, out, _ = self.run_cli("learn", "zorik", "eating-out")
         self.assertIn("re-filed 1 earlier 'other' entry under eating-out", out)
         self.assertEqual(self.entries()[-1].category, "eating-out")
-        self.assertEqual([e.category for e in self.entries()[:2]], ["groceries", "transport"])  # untouched
+        self.assertEqual([e.category for e in self.entries()[:2]], ["groceries", "transport:taxi"])  # untouched
 
     def test_month_filter_and_overlapping_export(self):
         self.run_cli("import", str(self.csv), "--month", "2026-09")

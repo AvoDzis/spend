@@ -43,7 +43,24 @@ class Entry:
 
 
 def account_name(category: str) -> str:
-    return re.sub(r"[^\w-]+", "-", category.strip().lower()).strip("-") or "other"
+    """"Transport/Taxi" or "transport:taxi" → "transport:taxi" (how the journal stores a subcategory)."""
+    parts = [re.sub(r"[^\w-]+", "-", p.strip().lower()).strip("-") for p in re.split(r"[/:]", category)]
+    return ":".join(p for p in parts if p) or "other"
+
+
+def display(category: str) -> str:
+    """"transport:taxi" → "transport/taxi" (how people type and read it)."""
+    return category.replace(":", "/")
+
+
+def parent(category: str) -> str:
+    """"transport:taxi" → "transport"; a category without a subcategory is its own parent."""
+    return category.split(":", 1)[0]
+
+
+def in_category(category: str, wanted: str) -> bool:
+    """Whether `category` is `wanted` or one of its subcategories."""
+    return category == wanted or category.startswith(wanted + ":")
 
 
 def fmt_amount(amount: Decimal) -> str:

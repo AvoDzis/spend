@@ -135,8 +135,8 @@ class Inbox(unittest.TestCase):
         self.phone("2026-10-04 09:10:00 1200 taxi")
         code, out, _ = self.run_cmd("list")
         self.assertEqual(code, 0)
-        self.assertIn("+ from phone: 1200 AMD · transport · taxi (2026-10-04)", out)
-        self.assertIn("1  2026-10-04  1,200 AMD  transport  taxi (phone)", out)
+        self.assertIn("+ from phone: 1200 AMD · transport/taxi · taxi (2026-10-04)", out)
+        self.assertIn("1  2026-10-04  1,200 AMD  transport/taxi  taxi (phone)", out)
         self.phone("2026-10-04 10:00:00 800 bus")
         if shutil.which("hledger"):
             code, out, _ = self.run_cmd("month", "2026-10")

@@ -1,6 +1,7 @@
 """Keyword rules that map a note to a category, and learn from fixes.
 
 Rules files have one category per line:  `groceries: supermarket, sas, yerevan city`
+A category can have a subcategory, written with a slash: `transport/taxi: taxi, gg, yandex go`.
 Defaults ship in default_rules.txt; `spend fix` / `spend learn` append to config.rules().
 A rule matches whole words of the note in order (plurals too; `pharm*` matches any word
 starting with "pharm"). The longest phrase wins, then learned over default, then the
@@ -112,7 +113,7 @@ def _save(keyword: list[str], category: str) -> None:
             fh.write(LEARNED_HEADER)
         elif not text.endswith("\n"):
             fh.write("\n")
-        fh.write(f"{category}: {' '.join(keyword)}\n")
+        fh.write(f"{journal.display(category)}: {' '.join(keyword)}\n")
 
 
 def _known(rules: list[Rule]) -> set[str]:
@@ -132,15 +133,16 @@ def _learn(keyword: list[str], category: str, rules: list[Rule], known: set[str]
     """Save keyword → category unless the rules already give that category for it,
     then re-file earlier `other` entries the rule now covers."""
     phrase = " ".join(keyword)
-    if categorize(phrase, rules) == category:
-        print(f'rules already file "{phrase}" under {category}')
+    now = categorize(phrase, rules)
+    if now == category or journal.parent(now) == category:  # same, or already more specific
+        print(f'rules already file "{phrase}" under {journal.display(now)}')
     else:
         _save(keyword, category)
         new = "" if category in known else " (new category)"
-        print(f'learned "{phrase}" → {category}{new}')
+        print(f'learned "{phrase}" → {journal.display(category)}{new}')
     n = _retag_other(category)
     if n:
-        print(f"re-filed {n} earlier 'other' entr{'y' if n == 1 else 'ies'} under {category}")
+        print(f"re-filed {n} earlier 'other' entr{'y' if n == 1 else 'ies'} under {journal.display(category)}")
 
 
 def fix(target: str, category: str, word: str | None = None, learn: bool = True) -> int:
@@ -162,7 +164,8 @@ def fix(target: str, category: str, word: str | None = None, learn: bool = True)
         return 2
     e, cat, rules = entries[-n], journal.account_name(category), load_rules()
     known = _known(rules)  # before re-tagging, so a brand-new category is flagged
-    change = f"already {cat}" if cat == e.category else f"{e.category} → {cat}"
+    show = journal.display
+    change = f"already {show(cat)}" if cat == e.category else f"{show(e.category)} → {show(cat)}"
     if cat != e.category:
         journal.set_category(path, e, cat)
     print(f"fixed {journal.fmt_amount(e.amount)} {e.currency} · {change} · {e.note} ({e.date})")
@@ -186,20 +189,48 @@ def learn(keyword: str, category: str) -> int:
     return 0
 
 
+def recat(dry_run: bool = False) -> int:
+    """`spend recat`: re-apply the rules to past entries, but only to refine them: an entry in `other`
+    gets the rule's category, and an entry in a category gets the rule's subcategory of that same
+    category. An entry is never moved to a different category, so manual fixes stay."""
+    path, rules = config.journal(), load_rules()
+    changes = []
+    for e in journal.read_entries(path):
+        new = categorize(e.note, rules)
+        if new != e.category and (e.category == OTHER or journal.parent(new) == e.category):
+            changes.append((e, new))
+    for e, new in reversed(changes) if not dry_run else []:  # back to front keeps offsets valid
+        journal.set_category(path, e, new)
+    verb = "would re-file" if dry_run else "re-filed"
+    for e, new in changes:
+        print(f"{verb} {journal.fmt_amount(e.amount)} {e.currency} · {journal.display(e.category)} → "
+              f"{journal.display(new)} · {e.note} ({e.date})")
+    print(f"{verb} {len(changes)} entr{'y' if len(changes) == 1 else 'ies'}")
+    return 0
+
+
 def show() -> int:
-    """`spend cats`: list categories and their keywords."""
+    """`spend cats`: categories (with their subcategories) and their keywords."""
     by_cat: dict[str, dict[bool, list[str]]] = {}
     for r in load_rules():
         by_cat.setdefault(r.category, {False: [], True: []})[r.learned].append(" ".join(r.words))
     width = max(60, min(shutil.get_terminal_size((100, 20)).columns, 120))
-    pad = max(len(c) for c in [*by_cat, OTHER]) + 2
-    for cat in sorted(by_cat):
-        for learned, kws in ((False, by_cat[cat][False]), (True, by_cat[cat][True])):
-            if not kws:
+    labels = {c: ("  " + c.split(":", 1)[1] if ":" in c else c) for c in by_cat}
+    for c in by_cat:  # a parent with only subcategories still gets a heading
+        labels.setdefault(journal.parent(c), journal.parent(c))
+    pad = max(len(v) for v in [*labels.values(), OTHER]) + 2
+    for cat in sorted(labels, key=lambda c: (journal.parent(c), ":" in c, c)):
+        kws = by_cat.get(cat, {False: [], True: []})
+        if not kws[False] and not kws[True]:
+            print(labels[cat])
+            continue
+        for learned in (False, True):
+            if not kws[learned]:
                 continue
-            head = cat if learned is False or not by_cat[cat][False] else ""
-            text = ("learned: " if learned else "") + ", ".join(kws)
+            head = labels[cat] if learned is False or not kws[False] else ""
+            text = ("learned: " if learned else "") + ", ".join(kws[learned])
             print(textwrap.fill(text, width, initial_indent=head.ljust(pad), subsequent_indent=" " * pad))
     print(f"{OTHER.ljust(pad)}anything no rule matches")
     print(f"\nrules: {DEFAULT_RULES} + learned {config.rules()}")
+    print("subcategories are written with a slash: spend fix 3 transport/taxi")
     return 0

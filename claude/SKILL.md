@@ -19,7 +19,11 @@ description: Log and look up Avo's spending with the `spend` CLI (hledger journa
 | `/spend report [YYYY-MM]`, "month-end report" | `spend report [YYYY-MM]` (default: last month). `--email` sends it via Gmail; only when Avo asks |
 | `/spend inbox` | `spend inbox` |
 | "import my bank CSV for September" | `spend -n import <file> --month 2026-09` first, show the summary, then without `-n`. Only for months not logged by hand (else duplicates). |
-| `/spend cats` | `spend cats` |
+| `/spend cats` | `spend cats` (the category tree) |
+| "break it down", "transport details" | `spend month --sub`, or `spend chart --cat transport` for one category |
+| after changing rules | `spend -n recat` to preview, then `spend recat` (only refines past entries) |
+
+Categories can have subcategories, written with a slash: `spend fix 3 transport/taxi`, `spend learn porkbun growth/projects`. Pick the most specific one that fits; `spend cats` lists them.
 
 ## Line format
 `<amount><currency> <what>`, several separated by `, ` or `;`. No currency means AMD. Currencies: `dram`/`amd`/`֏`, `usd`/`$`, `eur`/`€`, `rub`, `gbp`. `1.5k` = 1500. Dates: `today` (default), `yesterday`, `oct 1` / `1 oct`, `YYYY-MM-DD`; a date carries on to the items after it in the same line (`oct 1 1200 taxi, 4500 sas, oct 2 300 coffee`). Quote anything with `$` for the shell (`spend '$50 jeans'`), or write `50usd`.

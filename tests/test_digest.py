@@ -25,6 +25,17 @@ class Pretty(unittest.TestCase):
         self.assertEqual(digest.pretty("գանձում 1 sms-ի համար"), "գանձում 1 sms-ի համար")
 
 
+class Subcategories(unittest.TestCase):
+    def test_breakdown_line_under_a_category(self):
+        es = [entry("2026-10-01", "1500", "transport:taxi"), entry("2026-10-02", "300", "transport:public"),
+              entry("2026-10-03", "900", "groceries")]
+        d = digest.Digest.build("2026-10", es)
+        self.assertEqual(d.categories("AMD"), [("transport", D("1800")), ("groceries", D("900"))])
+        self.assertEqual(d.subcategories("AMD", "transport"), [("taxi", D("1500")), ("public", D("300"))])
+        self.assertEqual(d.subcategories("AMD", "groceries"), [])
+        self.assertIn("taxi 1,500 · public 300", digest.render_html(d))
+
+
 class Summary(unittest.TestCase):
     def setUp(self):
         self.d = digest.Digest.build("2026-09", AUG + SEP)
