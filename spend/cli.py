@@ -13,15 +13,16 @@
   spend rm last|N [N …]                    delete entries (asks first; -y skips the question)
   spend cats                               categories, subcategories and their keywords
   spend recat                              re-apply the rules to past entries (only refines; -n to preview)
+  spend export / spend sync                refresh the iPhone widget's data (sync imports phone lines first)
 
 Options: -n / --dry-run (show, don't write), -y / --yes (don't ask), --src <name> (tag where it came from; default cli).
 """
 import sys
 
-from . import bankcsv, categories, chart, config, inbox, journal, monthly, report
+from . import bankcsv, categories, chart, config, export, inbox, journal, monthly, report
 from .parse import ParseError, parse_many
 
-COMMANDS = {"add", "inbox", "month", "list", "chart", "report", "import", "fix", "learn", "rm", "cats", "recat", "help"}
+COMMANDS = {"add", "inbox", "month", "list", "chart", "report", "import", "fix", "learn", "rm", "cats", "recat", "export", "sync", "help"}
 
 
 def add(text: str, dry_run: bool = False, source: str = "cli") -> int:
@@ -75,6 +76,13 @@ def rm(targets: list[str], yes: bool = False, dry_run: bool = False) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    code = _main(argv)
+    if not any(a in ("-n", "--dry-run") for a in (sys.argv[1:] if argv is None else argv)):
+        export.refresh()  # keep the phone view current
+    return code
+
+
+def _main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     dry_run, yes, source = False, False, "cli"
     for flag in ("-n", "--dry-run"):
@@ -137,4 +145,8 @@ def main(argv: list[str] | None = None) -> int:
         return categories.show()
     if cmd == "recat":
         return categories.recat(dry_run)
+    if cmd == "export":
+        return export.run(rest)
+    if cmd == "sync":
+        return export.sync(rest)
     return 2

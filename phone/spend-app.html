@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Spend</title>
+<style>
+  /* Opened by Spend.js in Scriptable, which replaces the data placeholder below with your entries. */
+  :root {
+    --page: #f0efec; --card: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --ink3: #8a8984;
+    --line: rgba(120,118,110,.25); --bar: #2a78d6; --chip: #e6e4de; --chip-on: #0b0b0b; --chip-on-ink: #fcfcfb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #111110; --card: #1a1a19; --ink: #ffffff; --ink2: #c3c2b7; --ink3: #9a9890;
+      --bar: #3987e5; --chip: #2a2a28; --chip-on: #ffffff; --chip-on-ink: #111110;
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--page); color: var(--ink);
+         font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+         padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+  .wrap { max-width: 620px; margin: 0 auto; padding: 16px; }
+  .card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+  .label { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); }
+  .nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .nav button { background: var(--chip); color: var(--ink); border: 0; border-radius: 10px; width: 40px; height: 36px;
+                font-size: 18px; }
+  .nav button:disabled { opacity: .35; }
+  .total { font-size: 42px; font-weight: 600; line-height: 1.1; margin-top: 6px; }
+  .total small { font-size: 20px; color: var(--ink2); font-weight: 600; }
+  .sub { color: var(--ink2); margin-top: 4px; }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; border: 0; background: var(--chip); color: var(--ink); border-radius: 999px; padding: 8px 13px;
+          font: inherit; font-size: 14px; }
+  .chip.on { background: var(--chip-on); color: var(--chip-on-ink); font-weight: 600; }
+  .pick { display: none; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .pick.on { display: flex; }
+  .pick input { flex: 1; min-width: 0; font: inherit; padding: 8px; border-radius: 10px; border: 1px solid var(--line);
+                background: var(--card); color: var(--ink); }
+  h2 { font-size: 15px; margin: 0 0 10px; }
+  h2 span { color: var(--ink3); font-weight: 400; }
+  details { border-top: 1px solid var(--line); }
+  details:first-of-type { border-top: 0; }
+  summary { list-style: none; cursor: pointer; padding: 8px 0; }
+  summary::-webkit-details-marker { display: none; }
+  .row { display: grid; grid-template-columns: minmax(84px, auto) 1fr auto 38px; gap: 10px; align-items: center; }
+  .row .name { white-space: nowrap; }
+  .track { height: 12px; }
+  .barfill { height: 12px; background: var(--bar); border-radius: 0 4px 4px 0; min-width: 2px; }
+  .amt { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pct { color: var(--ink3); text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .inner { padding: 0 0 10px; }
+  .subs { color: var(--ink3); font-size: 13px; margin: 0 0 6px; }
+  .tx { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line); }
+  .tx:first-child { border-top: 0; }
+  .tx .what { min-width: 0; }
+  .tx .what div:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tx .meta { color: var(--ink3); font-size: 12px; }
+  .tx .amt { font-size: 14px; }
+  .day summary { display: flex; justify-content: space-between; font-weight: 600; }
+  .day summary .amt { font-weight: 600; }
+  .muted { color: var(--ink3); font-size: 13px; }
+  .empty { color: var(--ink2); padding: 8px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="nav">
+      <button id="prev" aria-label="Previous period">‹</button>
+      <div style="text-align:center;flex:1"><div class="label" id="range"></div></div>
+      <button id="next" aria-label="Next period">›</button>
+    </div>
+    <div class="total" id="total"></div>
+    <div class="sub" id="others"></div>
+    <div class="sub" id="facts"></div>
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <div class="pick" id="pick">
+    <input type="date" id="from" aria-label="From"><span class="muted">to</span><input type="date" id="to" aria-label="To">
+  </div>
+
+  <div class="card"><h2>Where it went <span id="where-note"></span></h2><div id="cats"></div></div>
+  <div class="card" id="other-cur-card"><h2>Other currencies</h2><div id="other-cur"></div></div>
+  <div class="card"><h2>Day by day</h2><div id="days"></div></div>
+  <div class="muted" id="foot" style="padding:4px 4px 24px"></div>
+</div>
+
+<script>
+const DATA = __SPEND_DATA__;
+const MAIN = "AMD";
+const ORDER = ["AMD", "USD", "EUR"];
+const rows = DATA.entries.map(([d, a, c, cat, note, src]) => ({ d, a, c, cat, note, src }));
+
+// dates as local "YYYY-MM-DD" strings, so comparisons are plain string comparisons
+const pad = n => String(n).padStart(2, "0");
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); };
+const monthStart = s => s.slice(0, 8) + "01";
+const monthEnd = s => { const d = parse(monthStart(s)); d.setMonth(d.getMonth() + 1); d.setDate(0); return iso(d); };
+const addMonths = (s, n) => { const d = parse(monthStart(s)); d.setMonth(d.getMonth() + n); return iso(d); };
+const today = iso(new Date());
+const fmtDay = (s, opts) => parse(s).toLocaleDateString("en-US", opts);
+
+const money = (v, c) => c === "AMD" ? Math.round(v).toLocaleString("en-US")
+                                    : v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+const parent = cat => cat.split("/")[0];
+
+const PRESETS = [
+  ["Today", () => [today, today], "day"],
+  ["Yesterday", () => [addDays(today, -1), addDays(today, -1)], "day"],
+  ["7 days", () => [addDays(today, -6), today], "days"],
+  ["This month", () => [monthStart(today), today], "month"],
+  ["Last month", () => [addMonths(today, -1), monthEnd(addMonths(today, -1))], "month"],
+  ["Pick days…", null, "pick"],
+];
+let state = { from: monthStart(today), to: today, kind: "month", preset: 3 };
+
+function rangeLabel() {
+  const { from, to, kind } = state;
+  if (kind === "month") return fmtDay(from, { month: "long", year: "numeric" });
+  if (from === to) return fmtDay(from, { weekday: "long", month: "short", day: "numeric" });
+  return `${fmtDay(from, { month: "short", day: "numeric" })} – ${fmtDay(to, { month: "short", day: "numeric" })}`;
+}
+
+function shift(dir) {  // ‹ › move the range by its own length (a whole month for months)
+  if (state.kind === "month") {
+    const from = addMonths(state.from, dir);
+    state = { ...state, from, to: monthEnd(from), preset: -1 };
+  } else {
+    const len = Math.round((parse(state.to) - parse(state.from)) / 864e5) + 1;
+    state = { ...state, from: addDays(state.from, dir * len), to: addDays(state.to, dir * len), preset: -1 };
+  }
+  render();
+}
+
+function sumBy(list, key) {
+  const m = new Map();
+  for (const r of list) m.set(key(r), (m.get(key(r)) || 0) + r.a);
+  return [...m.entries()].sort((x, y) => y[1] - x[1]);
+}
+
+function txHtml(r, withCat = true) {
+  return `<div class="tx"><div class="what"><div>${esc(r.note)}</div><div class="meta">` +
+    `${withCat ? esc(r.cat) + " · " : ""}${fmtDay(r.d, { month: "short", day: "numeric" })}` +
+    `${r.src === "phone" ? " · phone" : ""}</div></div><div class="amt">${money(r.a, r.c)} ${r.c}</div></div>`;
+}
+
+function catsHtml(list, cur) {
+  const cats = sumBy(list, r => parent(r.cat));
+  if (!cats.length) return `<div class="empty">Nothing in ${cur} for these days.</div>`;
+  const top = cats[0][1], total = cats.reduce((s, [, v]) => s + v, 0);
+  return cats.map(([name, v]) => {
+    const mine = list.filter(r => parent(r.cat) === name);
+    const subs = sumBy(mine.filter(r => r.cat.includes("/")), r => r.cat.split("/")[1]);
+    const subLine = subs.length ? `<div class="subs">${subs.map(([s, a]) => `${esc(s)} ${money(a, cur)}`).join(" · ")}</div>` : "";
+    const txs = mine.slice().sort((x, y) => y.a - x.a).map(r => txHtml(r)).join("");
+    return `<details><summary><div class="row"><div class="name">${esc(name)}</div>` +
+      `<div class="track"><div class="barfill" style="width:${Math.max(1, v / top * 100)}%"></div></div>` +
+      `<div class="amt">${money(v, cur)}</div><div class="pct">${Math.round(v / total * 100)}%</div></div></summary>` +
+      `<div class="inner">${subLine}${txs}</div></details>`;
+  }).join("");
+}
+
+function render() {
+  const { from, to } = state;
+  const sel = rows.filter(r => r.d >= from && r.d <= to);
+  const curs = [...new Set(sel.map(r => r.c))].sort((a, b) => (ORDER.indexOf(a) + 99) % 99 - (ORDER.indexOf(b) + 99) % 99);
+  const main = sel.filter(r => r.c === MAIN);
+  const mainTotal = main.reduce((s, r) => s + r.a, 0);
+
+  document.getElementById("range").textContent = rangeLabel();
+  document.getElementById("next").disabled = state.to >= today;
+  document.getElementById("total").innerHTML = `${money(mainTotal, MAIN)} <small>${MAIN}</small>`;
+  const others = curs.filter(c => c !== MAIN).map(c => `+ ${money(sel.filter(r => r.c === c).reduce((s, r) => s + r.a, 0), c)} ${c}`);
+  document.getElementById("others").textContent = others.join(" · ");
+  const days = new Set(sel.map(r => r.d)).size;
+  document.getElementById("facts").textContent = sel.length
+    ? `${sel.length} payment${sel.length > 1 ? "s" : ""} · ${days} day${days > 1 ? "s" : ""} with spending` : "No payments logged";
+
+  document.querySelectorAll(".chip").forEach((el, i) => el.classList.toggle("on", i === state.preset));
+  document.getElementById("pick").classList.toggle("on", state.preset === PRESETS.length - 1);
+  document.getElementById("from").value = from;
+  document.getElementById("to").value = to;
+
+  document.getElementById("where-note").textContent = `· ${MAIN}, tap a row for details`;
+  document.getElementById("cats").innerHTML = catsHtml(main, MAIN);
+  const otherCurs = curs.filter(c => c !== MAIN);
+  document.getElementById("other-cur-card").style.display = otherCurs.length ? "" : "none";
+  document.getElementById("other-cur").innerHTML = otherCurs.map(c =>
+    `<div class="muted" style="margin:6px 0 2px">${c}</div>` + catsHtml(sel.filter(r => r.c === c), c)).join("");
+
+  const byDay = [...new Set(sel.map(r => r.d))].sort().reverse();
+  document.getElementById("days").innerHTML = byDay.length ? byDay.map((d, i) => {
+    const list = sel.filter(r => r.d === d);
+    const sums = ORDER.concat(curs.filter(c => !ORDER.includes(c)))
+      .map(c => [c, list.filter(r => r.c === c).reduce((s, r) => s + r.a, 0)]).filter(([, v]) => v)
+      .map(([c, v]) => `${money(v, c)} ${c}`).join(" + ");
+    return `<details class="day"${i < 3 ? " open" : ""}><summary><span>${fmtDay(d, { weekday: "short", month: "short", day: "numeric" })}</span>` +
+      `<span class="amt">${sums}</span></summary><div class="inner">` +
+      list.slice().sort((x, y) => y.a - x.a).map(r => txHtml(r)).join("") + `</div></details>`;
+  }).join("") : `<div class="empty">Nothing logged on these days.</div>`;
+
+  const gen = new Date(DATA.generated);
+  document.getElementById("foot").textContent =
+    `Updated from your Mac ${gen.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ` +
+    `${gen.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}. ` +
+    `Phone entries appear after the Mac syncs (every 30 min while it's awake).`;
+}
+
+document.getElementById("chips").innerHTML = PRESETS.map(([name]) => `<button class="chip">${name}</button>`).join("");
+document.querySelectorAll(".chip").forEach((el, i) => el.addEventListener("click", () => {
+  const [, get, kind] = PRESETS[i];
+  if (get) { const [from, to] = get(); state = { from, to, kind, preset: i }; }
+  else state = { ...state, kind: "pick", preset: i };
+  render();
+}));
+for (const id of ["from", "to"]) document.getElementById(id).addEventListener("change", () => {
+  let from = document.getElementById("from").value || state.from, to = document.getElementById("to").value || from;
+  if (id === "from" && (to < from || state.from === state.to)) to = from;  // picking one day: both ends follow
+  if (to < from) [from, to] = [to, from];
+  state = { from, to, kind: "pick", preset: PRESETS.length - 1 };
+  render();
+});
+document.getElementById("prev").addEventListener("click", () => shift(-1));
+document.getElementById("next").addEventListener("click", () => shift(1));
+render();
+</script>
+</body>
+</html>
