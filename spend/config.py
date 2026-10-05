@@ -36,3 +36,8 @@ def inbox_state() -> Path:
 def import_state() -> Path:
     """Which bank-CSV rows `spend import` already imported."""
     return _env("SPEND_IMPORT_STATE", data_dir() / ".spend-import-state")
+
+
+def phone_dir() -> Path:
+    """Scriptable's iCloud folder: the phone widget reads its data and code from here."""
+    return _env("SPEND_PHONE_DIR", ICLOUD.parent / "iCloud~dk~simonbs~Scriptable" / "Documents")

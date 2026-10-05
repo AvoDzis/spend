@@ -25,6 +25,9 @@ one plain-text file on your machine: no account, no cloud, no subscription.
 | iPhone | tap the **Spend** Shortcut, type `4500 sas milk bread` |
 | Claude Code | `/spend 300dram coffee`, or just "I spent 20 euros on a museum ticket" |
 
+**On the phone**, a Home Screen widget shows this month at a glance; tap it to pick any day or
+range of days and see every payment ([docs/phone-widget.md](docs/phone-widget.md)).
+
 **Once a month (or whenever you're curious)**, look at where it went (example output):
 
 ```
@@ -98,6 +101,7 @@ spend cats                          categories, subcategories and their keywords
 spend recat                         re-apply the rules to past entries (only refines; never undoes a fix)
 spend inbox                         import iPhone lines (month and list do this for you)
 spend import <bank.csv> [--month M] one-time backfill from a bank CSV export (card payments)
+spend export / spend sync           refresh the iPhone widget's data (sync imports phone lines first)
 spend -n …                          dry run: show, don't write
 ```
 
@@ -149,8 +153,8 @@ With `--email` it sends that to you through Gmail as a designed HTML email (plai
    `security add-generic-password -s spend-gmail -a you@gmail.com -w`
 3. Try it: `spend report --email --to you@gmail.com`
 4. Schedule it for the 1st of every month at 10:00: `make schedule EMAIL=you@gmail.com`
-   (a LaunchAgent; if the Mac is asleep it runs on wake; `make unschedule` removes it;
-   log in `~/Library/Logs/spend-report.log`)
+   (LaunchAgents: the report, plus a 30-minute `spend sync` for the phone widget; if the Mac is
+   asleep they run on wake; `make unschedule` removes them; logs in `~/Library/Logs/spend-*.log`)
 
 ## Starting with history
 
