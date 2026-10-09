@@ -58,8 +58,20 @@ def parse_line(line: str) -> list[Expense]:
 
 
 def read_lines(path: Path) -> list[str]:
-    text = path.read_text(encoding="utf-8-sig")
-    return [line.strip() for line in text.splitlines() if line.strip()]
+    """Inbox lines. Typing several items on separate lines in the Shortcut's box puts the timestamp
+    only on the first; the lines after it without one get that same timestamp."""
+    out, stamp = [], None
+    for raw in path.read_text(encoding="utf-8-sig").splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        m = LINE_RE.match(line) or DOT_RE.match(line)
+        if m:
+            stamp = line[:m.start("text")].rstrip(" |\t")
+        elif stamp:
+            line = f"{stamp} {line}"
+        out.append(line)
+    return out
 
 
 def scan(lines: list[str], done: set[str]):

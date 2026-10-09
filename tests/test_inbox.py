@@ -98,6 +98,15 @@ class Inbox(unittest.TestCase):
         self.assertEqual([(e.date, e.note) for e in self.entries()],
                          [("2026-10-04", "shortcut test"), ("2026-09-05", "taxi")])
 
+    def test_lines_typed_below_share_the_timestamp(self):
+        with open(self.inbox, "a", encoding="utf-8") as fh:  # one Shortcut run, three lines in the box
+            fh.write("08.10.26, 12:00 3850 restaurant\n215 scooter\n900 taxi\n2026-10-09 09:00:00 500 coffee\n")
+        code, _, _ = self.run_inbox()
+        self.assertEqual(code, 0)
+        self.assertEqual([(e.date, e.note) for e in self.entries()],
+                         [("2026-10-08", "restaurant"), ("2026-10-08", "scooter"), ("2026-10-08", "taxi"),
+                          ("2026-10-09", "coffee")])
+
     def test_bad_lines_reported_once_good_ones_imported(self):
         self.phone("800 supermarket", "2026-10-04 10:00:00 coffee", "2026-10-04 10:01:00 300 tea")
         code, out, err = self.run_inbox()
